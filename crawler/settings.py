@@ -227,13 +227,13 @@ LOG_STDOUT = False
 # Whether to enable memory debugging.
 MEMDEBUG_ENABLED = False
 # When memory debugging is enabled a memory report will be sent to the specified addresses if this setting is not empty, otherwise the report will be written to the log.
-MEMDEBUG_NOTIFY = ['admin@yueguangba.com']
+MEMDEBUG_NOTIFY = ['admin@openslack.com']
 # Whether to enable the memory usage extension that will shutdown the Scrapy process when it exceeds a memory limit, and also notify by email when that happened.
 MEMUSAGE_ENABLED = False
 # The maximum amount of memory to allow (in megabytes) before shutting down Scrapy (if MEMUSAGE_ENABLED is True). If zero, no check will be performed.
 MEMUSAGE_LIMIT_MB = 0
 # A list of emails to notify if the memory limit has been reached.
-MEMUSAGE_NOTIFY_MAIL = ['admin@yueguangba.com']
+MEMUSAGE_NOTIFY_MAIL = ['admin@openslack.com']
 # Whether to send a memory usage report after each spider has been closed.
 MEMUSAGE_REPORT = False
 # The maximum amount of memory to allow (in megabytes) before sending a warning email notifying about it. If zero, no warning will be produced.
