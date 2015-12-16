@@ -13,8 +13,8 @@ key = "&key=U4DMV*8nvpm3EOpvf69Rxw(("
 class StackoverflowSpider(CrawlSpider):
     name = "stackoverflow"
     allowed_domains = ["stackoverflow.com", "stackexchange.com"]
-    search_url = "http://api.stackexchange.com/2.2/search/%s?order=%s&sort=%s&tagged=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
-    search1_url = "http://api.stackexchange.com/2.2/search/%s?order=%s&sort=%s&intitle=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
+    search_url = "http://api.stackexchange.com/2.2/search?page=%s&order=%s&sort=%s&tagged=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
+    search1_url = "http://api.stackexchange.com/2.2/search?page=%s&order=%s&sort=%s&intitle=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
     question_url = "http://api.stackexchange.com/2.2/questions/%s?order=desc&sort=activity&site=stackoverflow&filter=!0Uv6ZT)teRUpIDUXg)eKBUB)K" + key
     questions_url = "http://api.stackexchange.com/2.2/questions?page=%s&pagesize=50&order=%s&sort=%s&site=stackoverflow&filter=!LUcFBE)pRrTKav*c.B*_WQ" + key
     comment_url = "http://api.stackexchange.com/2.2/comments/%s?order=desc&sort=creation&site=stackoverflow&filter=!-*f(6sqoFKmM" + key
