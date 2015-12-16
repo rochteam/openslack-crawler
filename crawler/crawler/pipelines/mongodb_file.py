@@ -39,19 +39,19 @@ class NofilesDrop(DropItem):
         return DropItem.__str__(self)
 
 
-class BookFileException(FileException):
+class StandardFileException(FileException):
     """General book file error exception"""
 
 
-class MongodbBookFilesStore(FSFilesStore):
+class MongodbStandardFilesStore(FSFilesStore):
     """
         save book file to gridfs of mongodb.
     """
 
-    ShardMONGODB_SERVER = "localhost"
+    ShardMONGODB_SERVER = "127.0.0.1"
     ShardMONGODB_PORT = 27017
-    ShardMONGODB_DB = "books_mongo"
-    GridFs_Collection = "book_file"
+    ShardMONGODB_DB = "openslack_db"
+    GridFs_Collection = "openslack_file"
 
     def __init__(self, shard_server, shard_port, shard_db, shard_gridfs_collection):
         self.style = color.color_style()
@@ -65,11 +65,9 @@ class MongodbBookFilesStore(FSFilesStore):
 
     def persist_file(self, key, file_content, info, filename):
         contentType = os.path.splitext(filename)[1][1:].lower()
-
-        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType)
-        checksum = self.fs.get(book_file_id).md5
-
-        return (book_file_id, checksum)
+        file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType)
+        checksum = self.fs.get(file_id).md5
+        return (file_id, checksum)
 
     def stat_file(self, key, info):
         """
@@ -78,24 +76,23 @@ class MongodbBookFilesStore(FSFilesStore):
         """
         checksum = self.fs.get(key).md5
         last_modified = self.fs.get(key).upload_date
-
         return {'last_modified': last_modified, 'checksum': checksum}
 
 
-class MongodbWoaiduBookFile(FilePipeline):
+class MongodbkFile(FilePipeline):
     """
         This is for download the book file and then define the book_file_id
         field to the file's gridfs id in the mongodb.
     """
 
-    MEDIA_NAME = 'mongodb_bookfile'
+    MEDIA_NAME = 'mongodb_file'
     EXPIRES = 90
     BOOK_FILE_CONTENT_TYPE = []
     URL_GBK_DOMAIN = []
     ATTACHMENT_FILENAME_UTF8_DOMAIN = []
     STORE_SCHEMES = {
-        '': MongodbBookFilesStore,
-        'mongodb': MongodbBookFilesStore,
+        '': MongodbStandardFilesStore,
+        'mongodb': MongodbStandardFilesStore,
     }
 
     FILE_EXTENTION = ['.doc', '.txt', '.docx', '.rar', '.zip', '.pdf']
@@ -106,7 +103,6 @@ class MongodbWoaiduBookFile(FilePipeline):
         self.spiderinfo = {}
         self.download_func = download_func
         ##########from MediaPipeline###########
-
         self.store = self._get_store(shard_server, shard_port, shard_db, shard_gridfs_collection)
         self.item_download = {}
 
@@ -117,15 +113,14 @@ class MongodbWoaiduBookFile(FilePipeline):
         cls.ATTACHMENT_FILENAME_UTF8_DOMAIN = settings.get('ATTACHMENT_FILENAME_UTF8_DOMAIN', [])
         cls.URL_GBK_DOMAIN = settings.get('URL_GBK_DOMAIN', [])
         cls.FILE_EXTENTION = settings.get('FILE_EXTENTION', [])
-        shard_server = settings.get('ShardMONGODB_SERVER', "localhost")
+        shard_server = settings.get('ShardMONGODB_SERVER', "127.0.0.1")
         shard_port = settings.get('ShardMONGODB_PORT', 27017)
-        shard_db = settings.get('ShardMONGODB_DB', "books_mongo")
+        shard_db = settings.get('ShardMONGODB_DB', "openslack_db")
         shard_gridfs_collection = settings.get('GridFs_Collection', 'book_file')
         return cls(shard_server, shard_port, shard_db, shard_gridfs_collection)
 
     def _get_store(self, shard_server, shard_port, shard_db, shard_gridfs_collection):
         scheme = 'mongodb'
-
         store_cls = self.STORE_SCHEMES[scheme]
         return store_cls(shard_server, shard_port, shard_db, shard_gridfs_collection)
 
@@ -171,8 +166,8 @@ class MongodbWoaiduBookFile(FilePipeline):
 
         # XXX:To test specific url,you can use the following method:
         # return Request("http://down.wmtxt.com/wmtxt/wmtxt/UploadFile/2010-6/%A1%B6%D3%F6%BC%FB%C4%E3%A1%B7.rar")
-        if item.get('book_download'):
-            downloadfile_urls = [i['url'] for i in item.get('book_download') if i['url']]
+        if item.get('download'):
+            downloadfile_urls = [i['url'] for i in item.get('download') if i['url']]
             downloadfile_urls = list(set(itertools.chain(*downloadfile_urls)))
             first_download_file = list_first_item(downloadfile_urls)
             self.item_download[item['original_url']] = downloadfile_urls[1:]
@@ -191,14 +186,14 @@ class MongodbWoaiduBookFile(FilePipeline):
                 format='%(medianame)s (code: %(status)s): Error downloading %(medianame)s from %(request)s referred in <%(referer)s>',
                 level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
                 status=response.status, request=request, referer=referer)
-            raise BookFileException(request.url, '%s: download-error' % (request.url,))
+            raise StandardFileException(request.url, '%s: download-error' % (request.url,))
 
         if not response.body:
             log.msg(
                 format='%(medianame)s (empty-content): Empty %(medianame)s from %(request)s referred in <%(referer)s>: no-content',
                 level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
                 request=request, referer=referer)
-            raise BookFileException(request.url, '%s: empty-content' % (request.url,))
+            raise StandardFileException(request.url, '%s: empty-content' % (request.url,))
 
         status = 'cached' if 'cached' in response.flags else 'downloaded'
         log.msg(
@@ -207,25 +202,25 @@ class MongodbWoaiduBookFile(FilePipeline):
             status=status, request=request, referer=referer)
 
         if self.is_valid_content_type(response):
-            raise BookFileException(request.url, '%s: invalid-content_type' % (request.url,))
+            raise StandardFileException(request.url, '%s: invalid-content_type' % (request.url,))
 
         filename = self.get_file_name(request, response)
 
         if not filename:
-            raise BookFileException(request.url, '%s: noaccess-filename' % (request.url,))
+            raise StandardFileException(request.url, '%s: noaccess-filename' % (request.url,))
 
         self.inc_stats(info.spider, status)
 
         try:
             key = self.file_key(request.url)  # return the SHA1 hash of the file url
             book_file_id, checksum = self.store.persist_file(key, response.body, info, filename)
-        except BookFileException as exc:
+        except StandardFileException as exc:
             whyfmt = '%(medianame)s (error): Error processing %(medianame)s from %(request)s referred in <%(referer)s>: %(errormsg)s'
             log.msg(format=whyfmt, level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
                     request=request, referer=referer, errormsg=str(exc))
             raise
 
-        return {'url': request.url, 'book_file_id': book_file_id, 'checksum': checksum}
+        return {'url': request.url, 'file_id': book_file_id, 'checksum': checksum}
 
     def media_to_download(self, request, info):
         def _onsuccess(result):

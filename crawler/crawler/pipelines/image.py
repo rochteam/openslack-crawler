@@ -1,8 +1,6 @@
 import sys
 import os
-
 from scrapy.conf import settings
-
 reload(sys)
 sys.setdefaultencoding('utf-8')
 from scrapy.contrib.pipeline.images import ImagesPipeline
@@ -10,6 +8,7 @@ from scrapy.exceptions import DropItem
 from scrapy.http import Request
 import logging as log
 import hashlib, ntpath
+from crawler.utils.select_result import list_first_item
 from upyun import UpYun
 
 
@@ -102,6 +101,7 @@ class CoverImagesPipeline(ImagesPipeline):
 
 
 class LocalImagesPipeline(ImagesPipeline):
+
     def __init__(self, *args, **kwargs):
         super(LocalImagesPipeline, self).__init__(*args, **kwargs)
 
@@ -109,30 +109,32 @@ class LocalImagesPipeline(ImagesPipeline):
         for url in item["urls"]:
             yield Request(url)
 
-    def image_key(self, url):
-        image_guid = hashlib.sha1(url).hexdigest()
-        if self.conf["IMAGES_STORE_FORMAT"] == 'FLAT':
-            return '%s.jpg' % (image_guid)
-        elif self.conf["IMAGES_STORE_FORMAT"] == 'THUMBS':
-            return '%s/thumbs/%s/%s.jpg' % (self.conf["IMAGE_PATH"], self.THUMBS.iterkeys().next(), image_guid)
-        else:
-            return '%s/full/%s.jpg' % (self.conf["IMAGE_PATH"], image_guid)
 
-    def thumb_key(self, url, thumb_id):
-        image_guid = hashlib.sha1(url).hexdigest()
-        if self.conf["IMAGES_STORE_FORMAT"] == 'FLAT':
-            return '%s.jpg' % (image_guid)
-        else:
-            return '%s/thumbs/%s/%s.jpg' % (self.conf["IMAGE_PATH"], thumb_id, image_guid)
+class WoaiduCoverImage(ImagesPipeline):
+    """
+        this is for download the book covor image and then complete the
+        book_covor_image_path field to the picture's path in the file system.
+    """
+
+    def __init__(self, store_uri, download_func=None):
+        self.images_store = store_uri
+        super(WoaiduCoverImage, self).__init__(store_uri, download_func=None)
+
+    def get_media_requests(self, item, info):
+        if item.get('book_covor_image_url'):
+            yield Request(item['book_covor_image_url'])
 
     def item_completed(self, results, item, info):
-        img_elems = info.spider.scraper.get_image_elems()
-        for img_elem in img_elems:
-            img_attr_name = img_elem.scraped_obj_attr.name
-            for ok, x in results:
-                if ok:
-                    item[img_attr_name] = item[img_attr_name].replace(x['url'], ntpath.basename(x['path']))
-                    results_list = [x for ok, x in results if ok]
-            if len(results_list) == 0:
-                item[img_attr_name] = None
+        if self.LOG_FAILED_RESULTS:
+            msg = '%s found errors proessing %s' % (self.__class__.__name__, item)
+            for ok, value in results:
+                if not ok:
+                    log.err(value, msg, spider=info.spider)
+
+        image_paths = [x['path'] for ok, x in results if ok]
+        image_path = list_first_item(image_paths)
+        item['book_covor_image_path'] = os.path.join(os.path.abspath(self.images_store),
+                                                     image_path) if image_path else ""
+
         return item
+

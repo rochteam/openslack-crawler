@@ -16,9 +16,9 @@ class SingleMongodbPipeline(object):
         save the data to mongodb.
     """
 
-    MONGODB_SERVER = "localhost"
+    MONGODB_SERVER = "127.0.0.1"
     MONGODB_PORT = 27017
-    MONGODB_DB = "books_fs"
+    MONGODB_DB = "it"
 
     def __init__(self):
         """
@@ -29,42 +29,25 @@ class SingleMongodbPipeline(object):
 
         self.style = color.color_style()
         try:
-            client = MongoClient(self.MONGODB_SERVER, self.MONGODB_PORT)
-            self.db = client[self.MONGODB_DB]
+            self.client = MongoClient(self.MONGODB_SERVER, self.MONGODB_PORT)
+            self.db = self.client[self.MONGODB_DB]
         except Exception as e:
             print self.style.ERROR("ERROR(SingleMongodbPipeline): %s" % (str(e),))
             traceback.print_exc()
 
     @classmethod
     def from_crawler(cls, crawler):
-        cls.MONGODB_SERVER = crawler.settings.get('SingleMONGODB_SERVER', 'localhost')
+        cls.MONGODB_SERVER = crawler.settings.get('SingleMONGODB_SERVER', '127.0.0.1')
         cls.MONGODB_PORT = crawler.settings.getint('SingleMONGODB_PORT', 27017)
-        cls.MONGODB_DB = crawler.settings.get('SingleMONGODB_DB', 'books_fs')
+        cls.MONGODB_DB = crawler.settings.get('SingleMONGODB_DB', 'openslack')
         pipe = cls()
         pipe.crawler = crawler
         return pipe
 
     def process_item(self, item, spider):
-        book_detail = {
-            'book_name': item.get('book_name'),
-            'alias_name': item.get('alias_name', []),
-            'author': item.get('author', []),
-            'book_description': item.get('book_description', ''),
-            'book_covor_image_path': item.get('book_covor_image_path', ''),
-            'book_covor_image_url': item.get('book_covor_image_url', ''),
-            'book_download': item.get('book_download', []),
-            'book_file_url': item.get('book_file_url', ''),
-            'book_file': item.get('book_file', ''),
-            'original_url': item.get('original_url', ''),
-            'update_time': datetime.datetime.utcnow(),
-        }
-
-        result = self.db['book_detail'].insert(book_detail)
-        item["mongodb_id"] = str(result)
-
-        log.msg("Item %s wrote to MongoDB database %s/book_detail" %
-                (result, self.MONGODB_DB),
-                level=log.DEBUG, spider=spider)
+        db=self.client[item["db"]]
+        result = db[item["table"]].update({"id": item["id"]}, {"$set": item}, upsert=True)
+        log.info("Item %s wrote to MongoDB database %s" %(result, self.MONGODB_DB))
         return item
 
 
@@ -98,30 +81,15 @@ class ShardMongodbPipeline(object):
         cls.MONGODB_SERVER = crawler.settings.get('ShardMONGODB_SERVER', 'localhost')
         cls.MONGODB_PORT = crawler.settings.getint('ShardMONGODB_PORT', 27017)
         cls.MONGODB_DB = crawler.settings.get('ShardMONGODB_DB', 'books_mongo')
-        cls.GridFs_Collection = crawler.settings.get('GridFs_Collection', 'book_file')
+        cls.GridFs_Collection = crawler.settings.get('GridFs_Collection', 'openslack_fs')
         pipe = cls()
         pipe.crawler = crawler
         return pipe
 
     def process_item(self, item, spider):
-        book_detail = {
-            'book_name': item.get('book_name'),
-            'alias_name': item.get('alias_name', []),
-            'author': item.get('author', []),
-            'book_description': item.get('book_description', ''),
-            'book_covor_image_path': item.get('book_covor_image_path', ''),
-            'book_covor_image_url': item.get('book_covor_image_url', ''),
-            'book_download': item.get('book_download', []),
-            'book_file_url': item.get('book_file_url', ''),
-            'book_file_id': item.get('book_file_id', ''),
-            'original_url': item.get('original_url', ''),
-            'update_time': datetime.datetime.utcnow(),
-        }
-
-        result = self.db['book_detail'].insert(book_detail)
+        result = self.db['book_detail'].insert(item)
         item["mongodb_id"] = str(result)
-
-        log.msg("Item %s wrote to MongoDB database %s/book_detail" %
+        log.info("Item %s wrote to MongoDB database %s/book_detail" %
                 (result, self.MONGODB_DB),
                 level=log.DEBUG, spider=spider)
         return item
@@ -129,7 +97,6 @@ class ShardMongodbPipeline(object):
 
 from pymongo import errors
 from pymongo.read_preferences import ReadPreference
-from scraper.models import SchedulerRuntime, ScraperElem
 
 
 def not_set(string):
@@ -307,9 +274,6 @@ class MongoDBPipeline(object):
         item['website_name'] = self.conf["WEBSITE"]
         item['category_name'] = self.conf["CATEGORY"]
         item['scraper_pk'] = self.conf["SCRAPER"]
-        checker_rt = SchedulerRuntime(runtime_type='C')
-        checker_rt.save()
-        item['checker_runtime_pk'] = checker_rt.pk
         spider.action_successful = True
         if self.config['buffer']:
             self.current_item += 1

@@ -13,8 +13,8 @@ key = "&key=U4DMV*8nvpm3EOpvf69Rxw(("
 class StackoverflowSpider(CrawlSpider):
     name = "stackoverflow"
     allowed_domains = ["stackoverflow.com", "stackexchange.com"]
-    search_url = "http://api.stackexchange.com/2.2/search?order=desc&sort=activity&tagged=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
-    search1_url = "http://api.stackexchange.com/2.2/search?order=desc&sort=activity&intitle=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
+    search_url = "http://api.stackexchange.com/2.2/search/%s?order=%s&sort=%s&tagged=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
+    search1_url = "http://api.stackexchange.com/2.2/search/%s?order=%s&sort=%s&intitle=java&site=stackoverflow&filter=!)rCcH8X671cYAV)auUQs" + key
     question_url = "http://api.stackexchange.com/2.2/questions/%s?order=desc&sort=activity&site=stackoverflow&filter=!0Uv6ZT)teRUpIDUXg)eKBUB)K" + key
     questions_url = "http://api.stackexchange.com/2.2/questions?page=%s&pagesize=50&order=%s&sort=%s&site=stackoverflow&filter=!LUcFBE)pRrTKav*c.B*_WQ" + key
     comment_url = "http://api.stackexchange.com/2.2/comments/%s?order=desc&sort=creation&site=stackoverflow&filter=!-*f(6sqoFKmM" + key
@@ -26,14 +26,14 @@ class StackoverflowSpider(CrawlSpider):
     tags_url = "http://api.stackexchange.com/2.2/tags?page=%s&order=%s&sort=%s&site=stackoverflow&filter=!-*f(6qOIRTkE" + key
 
     def start_requests(self):
-        for i in range(1, 500, 1):
+        for i in range(1, 10, 1):
             i = str(i)
             for o in ("asc", "desc"):
-                sort = ("activity", "creation", "votes", "relevance")
-                for s in sort:
-                    yield Request(self.search_url % (i, o, s), self.parse_questions)
-                for s in sort:
-                    yield Request(self.search1_url % (i, o, s), self.parse_questions)
+                # sort = ("activity", "creation", "votes", "relevance")
+                # for s in sort:
+                #     yield Request(self.search_url % (i, o, s), self.parse_questions)
+                # for s in sort:
+                #     yield Request(self.search1_url % (i, o, s), self.parse_questions)
                 sort = ("activity", "creation", "votes", "hot", "week", "month")
                 for s in sort:
                     yield Request(self.questions_url % (i, o, s), self.parse_questions)

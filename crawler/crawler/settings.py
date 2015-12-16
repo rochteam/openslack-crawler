@@ -167,9 +167,9 @@ RETRY_ENABLED = True
 RETRY_TIMES = 3
 RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 408]
 DOWNLOAD_TIMEOUT = 20
-DOWNLOAD_DELAY = 10
-DOWNLOAD_WARNSIZE = 0  # The response size (in bytes) that downloader will start to warn.
-DOWNLOAD_MAXSIZE = 0
+# DOWNLOAD_DELAY = 10
+# DOWNLOAD_WARNSIZE = 0  # The response size (in bytes) that downloader will start to warn.
+# DOWNLOAD_MAXSIZE = 0
 
 # The class used to detect and filter duplicate requests.
 # DUPEFILTER_CLASS = "crawler.utils.bloomfilter.BLOOMDupeFilter"
@@ -211,11 +211,11 @@ SCHEDULER = 'scrapy.core.scheduler.Scheduler'
 # how many times to retry getting an item from the queue before the spider is considered idle
 # SCHEUDLER_ITEM_RETRIES = 3
 
-LOG_LEVEL = 'INFO'  # CRITICAL, ERROR, WARNING, INFO, DEBUG
+LOG_LEVEL = 'DEBUG'  # CRITICAL, ERROR, WARNING, INFO, DEBUG
 # Disable the built in logging in production
 LOG_ENABLED = True
 # If True, all standard output (and error) of your process will be redirected to the log. For example if you print 'hello' it will appear in the Scrapy log.
-LOG_STDOUT = False
+# LOG_STDOUT = True
 # LOG_ENCODING="utf-8'"
 # LOG_FILE = "/var/log/scrapy.log"
 # LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
@@ -240,13 +240,13 @@ MEMUSAGE_REPORT = False
 MEMUSAGE_WARNING_MB = 0
 
 # Whether the Redirect middleware will be enabled.
-REDIRECT_ENABLED = True
+# REDIRECT_ENABLED = True
 # The maximum number of redirections that will be follow for a single request.
 REDIRECT_MAX_TIMES = 1
 # Whether the Meta Refresh middleware will be enabled.
 METAREFRESH_ENABLED = True
 # The maximum meta-refresh delay (in seconds) to follow the redirection.
-REDIRECT_MAX_METAREFRESH_DELAY = 100
+METAREFRESH_MAXDELAY = 100
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENTS = [
