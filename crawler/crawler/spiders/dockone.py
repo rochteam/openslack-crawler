@@ -39,20 +39,27 @@ class DockeOneSpider(Spider):
             item["comment_count"] = int(desc_list[1].replace("个评论", "").strip())
             item["view_count"] = int(desc_list[2].replace("次浏览", "").strip())
             item["updated"] = desc_list[3].strip()
-            item["created"] = int(time.time())
-            # item['url']="http://dockone.io/article/860"
-            yield Request(item['url'], meta={"base_item": item}, callback=self.parse_detail)
+            if item["url"].endswith("904"):
+                yield Request(item['url'], meta={"base_item": item}, callback=self.parse_detail)
 
     def parse_detail(self, response):
         sel = Selector(response)
-        base_item = response.meta["base_item"]
-        base_item["content"] = "".join(sel.xpath('//div[@class="content markitup-box"]/child::*').extract())
-        base_item["tags"]=[]
+        item = response.meta["base_item"]
+        item["content"] = "".join(sel.xpath('//div[@class="content markitup-box"]/child::*').extract())
+        item["tags"]=[]
         tags = sel.xpath('//span[@class="topic-tag"]')
         for t in tags:
                 # print t.xpath('@data-id').extract()
-            base_item["tags"].append(t.xpath('./a/text()').extract()[0])
-        base_item["id"]=base_item["url"].replace("http://dockone.io/article/","")
+            item["tags"].append(t.xpath('./a/text()').extract()[0])
+        item["id"]=item["url"].replace("http://dockone.io/article/","")
         # print base_item
-        dockonedb.article.update({"id": base_item["id"]}, {"$set": base_item}, upsert=True)
-        return None
+        # dockonedb.article.update({"id": item["id"]}, {"$set": item}, upsert=True)
+        item["spider"]=self.name
+        item["db"]=self.name
+        item["collection"]="article"
+        item["category"] = "doc"
+        item["created"] = int(time.time())
+        item["image_urls"]=sel.xpath('//div[@class="content markitup-box"]//img/@src').extract()
+        item["file_urls"]=item["image_urls"]
+        print item["file_urls"]
+        yield item
