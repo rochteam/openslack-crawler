@@ -123,7 +123,7 @@ STATS_DUMP = True
 ITEM_PIPELINES = {
 # 'scrapy.pipelines.files.FilesPipeline': 200,
 'crawler.pipelines.file.MongodbFilesPipeline': 200,
-# 'crawler.pipelines.ValidationPipeline': 400,
+'crawler.pipelines.mongodb.MongoDBPipeline': 400,
 # 'crawler.pipelines.AlibabaMongoDBPipeline': 800,
 # 'crawler.pipelines.mongo.MongoPipeline': 900,
 }

@@ -9,95 +9,8 @@ import logging as log
 from pymongo.mongo_client import MongoClient
 
 from crawler.utils import color
-
-
-class SingleMongodbPipeline(object):
-    """
-        save the data to mongodb.
-    """
-
-    MONGODB_SERVER = "127.0.0.1"
-    MONGODB_PORT = 27017
-    MONGODB_DB = "it"
-
-    def __init__(self):
-        """
-            The only async framework that PyMongo fully supports is Gevent.
-
-            Currently there is no great way to use PyMongo in conjunction with Tornado or Twisted. PyMongo provides built-in connection pooling, so some of the benefits of those frameworks can be achieved just by writing multi-threaded code that shares a MongoClient.
-        """
-
-        self.style = color.color_style()
-        try:
-            self.client = MongoClient(self.MONGODB_SERVER, self.MONGODB_PORT)
-            self.db = self.client[self.MONGODB_DB]
-        except Exception as e:
-            print self.style.ERROR("ERROR(SingleMongodbPipeline): %s" % (str(e),))
-            traceback.print_exc()
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        cls.MONGODB_SERVER = crawler.settings.get('SingleMONGODB_SERVER', '127.0.0.1')
-        cls.MONGODB_PORT = crawler.settings.getint('SingleMONGODB_PORT', 27017)
-        cls.MONGODB_DB = crawler.settings.get('SingleMONGODB_DB', 'openslack')
-        pipe = cls()
-        pipe.crawler = crawler
-        return pipe
-
-    def process_item(self, item, spider):
-        db=self.client[item["db"]]
-        result = db[item["table"]].update({"id": item["id"]}, {"$set": item}, upsert=True)
-        log.info("Item %s wrote to MongoDB database %s" %(result, self.MONGODB_DB))
-        return item
-
-
-class ShardMongodbPipeline(object):
-    """
-        save the data to shard mongodb.
-    """
-
-    MONGODB_SERVER = "localhost"
-    MONGODB_PORT = 27017
-    MONGODB_DB = "books_mongo"
-    GridFs_Collection = "book_file"
-
-    def __init__(self):
-        """
-            The only async framework that PyMongo fully supports is Gevent.
-
-            Currently there is no great way to use PyMongo in conjunction with Tornado or Twisted. PyMongo provides built-in connection pooling, so some of the benefits of those frameworks can be achieved just by writing multi-threaded code that shares a MongoClient.
-        """
-
-        self.style = color.color_style()
-        try:
-            client = MongoClient(self.MONGODB_SERVER, self.MONGODB_PORT)
-            self.db = client[self.MONGODB_DB]
-        except Exception as e:
-            print self.style.ERROR("ERROR(ShardMongodbPipeline): %s" % (str(e),))
-            traceback.print_exc()
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        cls.MONGODB_SERVER = crawler.settings.get('ShardMONGODB_SERVER', 'localhost')
-        cls.MONGODB_PORT = crawler.settings.getint('ShardMONGODB_PORT', 27017)
-        cls.MONGODB_DB = crawler.settings.get('ShardMONGODB_DB', 'books_mongo')
-        cls.GridFs_Collection = crawler.settings.get('GridFs_Collection', 'openslack_fs')
-        pipe = cls()
-        pipe.crawler = crawler
-        return pipe
-
-    def process_item(self, item, spider):
-        result = self.db['book_detail'].insert(item)
-        item["mongodb_id"] = str(result)
-        log.info("Item %s wrote to MongoDB database %s/book_detail" %
-                (result, self.MONGODB_DB),
-                level=log.DEBUG, spider=spider)
-        return item
-
-
 from pymongo import errors
 from pymongo.read_preferences import ReadPreference
-
 
 def not_set(string):
     """ Check if a string is None or ''
@@ -117,10 +30,10 @@ class MongoDBPipeline(object):
         'uri': 'mongodb://localhost:27017',
         'fsync': False,
         'write_concern': 0,
-        'database': 'alibaba',
-        'collection': 'items',
+        'database': 'openslack',
+        'collection': 'doc',
         'replica_set': None,
-        'unique_key': None,
+        'unique_key': "url",
         'buffer': None,
         'append_timestamp': False,
         'stop_on_duplicate': 0,
@@ -144,12 +57,12 @@ class MongoDBPipeline(object):
         self.load_spider(spider)
         # Configure the connection
         self.configure()
-        if not hasattr(self, 'conf'):
+        if hasattr(spider, 'conf'):
             self.conf = spider.conf
             self.config["collection"] = self.conf["COLLECTION"]
 
         if self.config['replica_set'] is not None:
-            connection = MongoClient(
+            self.connection = MongoClient(
                 self.config['uri'],
                 replicaSet=self.config['replica_set'],
                 w=self.config['write_concern'],
@@ -157,13 +70,14 @@ class MongoDBPipeline(object):
                 read_preference=ReadPreference.PRIMARY_PREFERRED)
         else:
             # Connecting to a stand alone MongoDB
-            connection = MongoClient(
+            self.connection = MongoClient(
                 self.config['uri'],
                 fsync=self.config['fsync'],
                 read_preference=ReadPreference.PRIMARY)
 
         # Set up the collection
-        database = connection[self.config['database']]
+
+        database = self.connection[self.config['database']]
         self.collection = database[self.config['collection']]
         log.info(u'Connected to MongoDB {0}, using "{1}/{2}"'.format(
             self.config['uri'],
@@ -269,20 +183,12 @@ class MongoDBPipeline(object):
         """
         print "----------------------"
         # item = dict(self._get_serialized_fields(item))
-        item['site_name'] = self.conf["SITE"]
-        item['website_id'] = self.conf["WEBSITE_ID"]
-        item['website_name'] = self.conf["WEBSITE"]
-        item['category_name'] = self.conf["CATEGORY"]
-        item['scraper_pk'] = self.conf["SCRAPER"]
         spider.action_successful = True
         if self.config['buffer']:
             self.current_item += 1
-
             if self.config['append_timestamp']:
-                item['updated'] = datetime.datetime.utcnow()
-
+                item['timestamp'] = datetime.datetime.now()
             self.item_buffer.append(item)
-
             if self.current_item == self.config['buffer']:
                 self.current_item = 0
                 return self.insert_item(self.item_buffer, spider)
@@ -307,6 +213,8 @@ class MongoDBPipeline(object):
         :param spider: The spider running the queries
         :returns: Item object
         """
+        database = self.connection[item["db"]]
+        self.collection = database[item["collection"]]
         if not isinstance(item, list):
             item = dict(item)
 
@@ -331,7 +239,6 @@ class MongoDBPipeline(object):
                             'Number of duplicate key insertion exceeded'
                         )
                 pass
-
         else:
             key = {}
             if isinstance(self.config['unique_key'], list):
@@ -340,12 +247,9 @@ class MongoDBPipeline(object):
             else:
                 key[self.config['unique_key']] = item[self.config['unique_key']]
 
-            self.collection.update(key, item, upsert=True)
-
+            self.collection.update(key, {"$set": item}, upsert=True)
             log.info(
                 u'Stored item(s) in MongoDB {0}/{1}'.format(
-                    self.config['database'], self.config['collection']),
-                level=log.DEBUG,
-                spider=spider)
+                    self.config['database'], self.config['collection']))
             spider.log("Item saved.", log.INFO)
         return item
