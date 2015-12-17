@@ -57,10 +57,10 @@ class MySQLStoreCnblogsPipeline(object):
 		insert into cnblogsinfo(linkmd5id, title, description, link, listUrl, updated)
 		values(%s, %s, %s, %s, %s, %s)
 	    """, (linkmd5id, item['title'], item['desc'], item['link'], item['listUrl'], now))
-        # print """
-        #    insert into cnblogsinfo(linkmd5id, title, description, link, listUrl, updated)
-        #    values(%s, %s, %s, %s, %s, %s)
-        # """, (linkmd5id, item['title'], item['desc'], item['link'], item['listUrl'], now)
+            # print """
+            #    insert into cnblogsinfo(linkmd5id, title, description, link, listUrl, updated)
+            #    values(%s, %s, %s, %s, %s, %s)
+            # """, (linkmd5id, item['title'], item['desc'], item['link'], item['listUrl'], now)
 
     # 获取url的md5编码
     def _get_linkmd5id(self, item):

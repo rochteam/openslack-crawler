@@ -48,8 +48,8 @@ class MongodbBookFilesStore(FSFilesStore):
 
     ShardMONGODB_SERVER = "localhost"
     ShardMONGODB_PORT = 27017
-    ShardMONGODB_DB = "books_mongo"
-    GridFs_Collection = "book_file"
+    ShardMONGODB_DB = "openslack"
+    GridFs_Collection = "openslack"
 
     def __init__(self, shard_server,shard_port,shard_db,shard_gridfs_collection):
         self.style = color.color_style()
