@@ -1,80 +1,84 @@
 # -*- coding: utf-8 -*-
 import time
 import sys
-
 import scrapy
-import MySQLdb
 from scrapy.http import Request
+from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
-
+from scrapy.spiders import CrawlSpider, Rule
+import logging as log
+from redis import StrictRedis
+redis=StrictRedis()
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 
-class CsdnSpider(scrapy.Spider):
+class CsdnSpider(CrawlSpider):
     name = "csdn"
-    allowed_domains = ["blog.csdn.net"]
-    start_urls = (
-        'http://blog.csdn.net/hot.html',
-    )
+    allowed_domains = ["csdn.net"]
+    # start_urls = (
+    #     'http://blog.csdn.net/hot.html',
+    #     'http://blog.csdn.net/',
+    #     'http://blog.csdn.net/column.html',
+    #     'http://blog.csdn.net/bole.html',
+    #     'http://blog.csdn.net/experts.html',
+    #     'http://blog.csdn.net/ranking.html',
+    #     'http://blog.csdn.net/ranking.html',
+    # )
+    def start_requests(self):
+        yield Request("http://blog.csdn.net/?&page=1", self.parse_blog_list)
 
-    def parse(self, response):
-        items = []
+    download_delay = 2
+    rules = (
+        Rule(LinkExtractor(allow = ('article/details/[0-9]+'),allow_domains = ('blog.csdn.net')),callback = 'parse_item'),
+        Rule(LinkExtractor(allow = ('index.html'),allow_domains = ('blog.csdn.net'))),
+        Rule(LinkExtractor(allow = ('details.html'),allow_domains = ('blog.csdn.net'))),
+        Rule(LinkExtractor(allow = ('experts.html'),allow_domains = ('blog.csdn.net'))),
+        Rule(LinkExtractor(allow = ('article/list'),allow_domains = ('blog.csdn.net'))),
+        Rule(LinkExtractor(allow = ('/[a-z_0-9]+$'),allow_domains = ('blog.csdn.net'))),
+        Rule(LinkExtractor(allow=r'article/list/[0-9]{1,20}'), callback='parse_item', follow=True),
+        Rule(LinkExtractor(allow=r'article/details/[0-9]{1,20}'), callback='parse_article', follow=True),
+        # Rule(LinkExtractor(allow=r"^http://(news|cloud|mobile|sd|programmer)\.csdn.net($|(/[a-zA-Z]+/\d+$))"),callback="parse_next_page",follow=True),
+        )
+
+    def parse_blog_list(self, response):
+        for sel in response.xpath("//div[@class='blog_list']"):
+            item={}
+            pagelink = sel.xpath('./h1/a[2]/@href').extract()[0].strip()
+            item["id"] = sel.xpath('./h1/a[2]/@name').extract()[0].strip()
+            item["category"] = sel.xpath('./h1/a[1]/text').extract()[0].strip().replace("[","").replace("]","")
+            item["user_name"] = sel.xpath('.//dt/a/img/@alt').extract()[0].strip()
+            item["user_avatar"] = sel.xpath('.//dt/a/img/@src').extract()[0].strip()
+            link = "http://blog.csdn.net" + pagelink
+            item["digg"] = sel.xpath('.//span[@class="fr digg"]/@digg').extract()[0].strip()
+            item["bury"] = sel.xpath('.//span[@class="fr digg"]/@bury').extract()[0].strip()
+            item["user_fullname"] = sel.xpath('.//a[@class="user_name"]/a/text()').extract()[0].strip()
+            yield Request(link, meta={"base_item": item},callback=self.parse_blog_detail)
+        page_nav=response.xpath("//div[@class='page_nav']/a/[@src]")
+        for l in page_nav:
+            redis.sadd(self.name+":blog_list","http://blog.csdn.net" + page_nav)
+
+    def parse_blog_detail(self, response):
         sel = Selector(response)
-        sites = sel.xpath("//div[@class='page_right']/div[@class='blog_list']").extract()
-        for site in sites:
-            body = Selector(text=site)
-            href = body.xpath("//h1/a/@href").extract()
-            desc = body.xpath("//h1/a[@class='category']/text()").extract()
-            # print len(desc)
-            if (len(desc) == 0):
-                str = u'[其他]'
-                desc.append(str)
-            url = href[len(href) - 1]
-            # print len(url)
-            # print len(desc)
-            # print "------------------------------------------"
-            yield Request(url=url, meta={'desc': desc[0].encode('utf-8')}, callback=self.parse_word)
+        item = response.meta["base_item"]
+        url = response.url
+        item["title"] = sel.xpath("//span[@class='link_title']//text()").extract().strip()
+        item["content"] = "".join(sel.xpath("//div[@id='article_content']/child::*").extract())
+        item['url'] = url
+        item['tags'] = sel.xpath('//span[@class="link_categories"]//text()').extract()
+        item["postdate"] = sel.xpath("//span[@class='link_postdate']/text()").extract()[0].strip()
+        item["view_count"] = sel.xpath("//span[@class='link_view']/text()").extract()[0].strip().replace(u"阅读","")
+        item["comments_count"] = sel.xpath("//span[@class='link_comments']/text()").extract()[0].strip().replace("(","").replace(")","")
+        blog_rank = sel.xpath('//url[@class="blog_rank"]/li/span/text()').extract()
+        item["user_views"]=blog_rank[0].replace(u"次", "")
+        item["user_credits"]=blog_rank[1]
+        item["user_rank"]=blog_rank[2].replace(u"第", "").replace(u"名", "")
+        item["image_urls"]=sel.xpath('//div[@id="article_content"]//img/@src').extract()
+        item["file_urls"]=item["image_urls"]
+        log.info("url is "+url)
+        next_article=sel.xpath("//li[@class='next_article']/a/@href").extract()[0].strip()
+        redis.sadd(self.name+":blog_detail","http://blog.csdn.net" + next_article)
+        prev_article=sel.xpath("//li[@class='prev_article']/a/@href").extract()[0].strip()
+        redis.sadd(self.name+":blog_detail","http://blog.csdn.net" + prev_article)
+        return item
 
-    def parse_word(self, response):
-        label = response.meta['desc']
-        # print type(label)
-        if (len(label) == 0):
-            label = u'其他'
-        ISOTIMEFORMAT = '%Y-%m-%d %X'
-        datetime = time.strftime(ISOTIMEFORMAT, time.localtime())
-        try:
-            conn = MySQLdb.connect(host='localhost', user='root', passwd='root', db='blog', port=3306, charset='utf8')
-            cursor = conn.cursor()
-            word_sel = Selector(response)
-            href = response.url
-            title = word_sel.xpath(
-                "//div[@id='article_details']/div[@class='article_title']/h1/span[@class='link_title']/a/text()").extract()
-            body = word_sel.xpath("//div[@class='details']/div[@class='article_content']").extract()
-            # label=word_sel.xpath("//div[@id='article_details']/div[@id='article_content']")
-            content = str(title[0].encode('utf-8')).replace(' ', '')
-            cursor.execute("select * from word where title =%s", content);
-            tf = cursor.fetchall()
-            if (len(tf) == 0):
-                label = label.replace('[', '').replace(']', '')
-                cursor.execute("select * from label_list where label_name = '" + label + "'");
-                result = cursor.fetchall()
-                if (len(result) == 0):
-                    # print "null"
-                    insert_sql = "Insert into label_list(label_name) VALUE ('" + label + "')";
-                    label_id = cursor.execute(insert_sql)
-
-                else:
-                    # print result[0][0]
-                    label_id = result[0][0]
-                if (len(content) != 0):
-                    sql = "Insert into word(title,datetime,label_id,text,href) values (%s,%s,%s,%s)"
-                    parm = (content, datetime, label_id, body[0].encode('utf-8'), href)
-                    cursor.execute(sql, parm)
-                    conn.commit()
-            else:
-                print "Is have"
-                cursor.close()
-                conn.close()
-        except MySQLdb.Error, e:
-            print "Mysql Error %d: %s" % (e.args[0], e.args[1])

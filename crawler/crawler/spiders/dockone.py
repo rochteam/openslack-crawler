@@ -14,7 +14,7 @@ class DockeOneSpider(Spider):
     allowed_domains = ["dockone.io"]
 
     def start_requests(self):
-        for i in xrange(1, 2):
+        for i in xrange(1, 48):
             yield Request("http://dockone.io/day-0__is_recommend-1__page-%s" % i, self.parse_list)
 
     def parse_list(self, response):
@@ -39,8 +39,7 @@ class DockeOneSpider(Spider):
             item["comment_count"] = int(desc_list[1].replace("个评论", "").strip())
             item["view_count"] = int(desc_list[2].replace("次浏览", "").strip())
             item["updated"] = desc_list[3].strip()
-            if item["url"].endswith("904"):
-                yield Request(item['url'], meta={"base_item": item}, callback=self.parse_detail)
+            yield Request(item['url'], meta={"base_item": item}, callback=self.parse_detail)
 
     def parse_detail(self, response):
         sel = Selector(response)
@@ -53,7 +52,6 @@ class DockeOneSpider(Spider):
             item["tags"].append(t.xpath('./a/text()').extract()[0])
         item["id"]=item["url"].replace("http://dockone.io/article/","")
         # print base_item
-        # dockonedb.article.update({"id": item["id"]}, {"$set": item}, upsert=True)
         item["spider"]=self.name
         item["db"]=self.name
         item["collection"]="article"
@@ -61,5 +59,6 @@ class DockeOneSpider(Spider):
         item["created"] = int(time.time())
         item["image_urls"]=sel.xpath('//div[@class="content markitup-box"]//img/@src').extract()
         item["file_urls"]=item["image_urls"]
-        print item["file_urls"]
-        yield item
+        # print item["file_urls"]
+        # dockonedb.article.update({"id": item["id"]}, {"$set": item}, upsert=True)
+        return item

@@ -212,7 +212,7 @@ SCHEDULER = 'scrapy.core.scheduler.Scheduler'
 # how many times to retry getting an item from the queue before the spider is considered idle
 # SCHEUDLER_ITEM_RETRIES = 3
 
-LOG_LEVEL = 'DEBUG'  # CRITICAL, ERROR, WARNING, INFO, DEBUG
+LOG_LEVEL = 'INFO'  # CRITICAL, ERROR, WARNING, INFO, DEBUG
 # Disable the built in logging in production
 LOG_ENABLED = True
 # If True, all standard output (and error) of your process will be redirected to the log. For example if you print 'hello' it will appear in the Scrapy log.
