@@ -38,11 +38,7 @@ class NofilesDrop(DropItem):
         return DropItem.__str__(self)
 
 
-class BookFileException(FileException):
-    """General book file error exception"""
-
-
-class MongodbBookFilesStore(FSFilesStore):
+class MongodbFilesStore(FSFilesStore):
     """
         save book file to gridfs of mongodb.
     """
@@ -59,7 +55,7 @@ class MongodbBookFilesStore(FSFilesStore):
             self.client = MongoClient(shard_server, shard_port)
             self.inti_fs(shard_db)
         except Exception as e:
-            print self.style.ERROR("ERROR(MongodbBookFilesStore): %s" % (str(e),))
+            print self.style.ERROR("ERROR(MongodbFilesStore): %s" % (str(e),))
             traceback.print_exc()
 
     def inti_fs(self, key):
@@ -99,8 +95,8 @@ class MongodbFilesPipeline(FilesPipeline):
     FILES_RESULT_FIELD = "files"
     FILES_URLS_FIELD = "file_urls"
     STORE_SCHEMES = {
-        '': MongodbBookFilesStore,
-        'mongodb': MongodbBookFilesStore,
+        '': MongodbFilesStore,
+        'mongodb': MongodbFilesStore,
     }
 
     FILE_EXTENTION = ['.rar', '.zip', '.pdf', '.tar', '.tar.gz', '.tar.bz2',
@@ -136,7 +132,6 @@ class MongodbFilesPipeline(FilesPipeline):
         store_cls = self.STORE_SCHEMES[scheme]
         return store_cls(shard_server, shard_port, shard_db, shard_gridfs_collection)
 
-    #
     def process_item(self, item, spider):
         """
             custom process_item func,so it will manage the Request result.
@@ -188,14 +183,14 @@ class MongodbFilesPipeline(FilesPipeline):
                 format='%(medianame)s (code: %(status)s): Error downloading %(medianame)s from %(request)s referred in <%(referer)s>',
                 level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
                 status=response.status, request=request, referer=referer)
-            raise BookFileException(request.url, '%s: download-error' % (request.url,))
+            raise FileException(request.url, '%s: download-error' % (request.url,))
 
         if not response.body:
             log.msg(
                 format='%(medianame)s (empty-content): Empty %(medianame)s from %(request)s referred in <%(referer)s>: no-content',
                 level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
                 request=request, referer=referer)
-            raise BookFileException(request.url, '%s: empty-content' % (request.url,))
+            raise FileException(request.url, '%s: empty-content' % (request.url,))
 
         status = 'cached' if 'cached' in response.flags else 'downloaded'
         log.msg(
@@ -204,19 +199,19 @@ class MongodbFilesPipeline(FilesPipeline):
             status=status, request=request, referer=referer)
 
         if self.is_valid_content_type(response):
-            raise BookFileException(request.url, '%s: invalid-content_type' % (request.url,))
+            raise FileException(request.url, '%s: invalid-content_type' % (request.url,))
 
         filename = self.get_file_name(request, response)
 
         if not filename:
-            raise BookFileException(request.url, '%s: noaccess-filename' % (request.url,))
+            raise FileException(request.url, '%s: noaccess-filename' % (request.url,))
 
         self.inc_stats(info.spider, status)
 
         try:
             key = self.file_key(info.spider.name, request.url)  # return the SHA1 hash of the file url
             book_file_id, checksum = self.store.persist_file(key, response.body, info, filename)
-        except BookFileException as exc:
+        except FileException as exc:
             whyfmt = '%(medianame)s (error): Error processing %(medianame)s from %(request)s referred in <%(referer)s>: %(errormsg)s'
             log.msg(format=whyfmt, level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
                     request=request, referer=referer, errormsg=str(exc))
