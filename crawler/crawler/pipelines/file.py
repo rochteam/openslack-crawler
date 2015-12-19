@@ -53,7 +53,7 @@ class MongodbFilesStore(FSFilesStore):
         self.shard_gridfs_collection = shard_gridfs_collection
         try:
             self.client = MongoClient(shard_server, shard_port)
-            self.inti_fs(shard_db)
+            # self.inti_fs(shard_db)
         except Exception as e:
             print self.style.ERROR("ERROR(MongodbFilesStore): %s" % (str(e),))
             traceback.print_exc()
@@ -62,10 +62,10 @@ class MongodbFilesStore(FSFilesStore):
         self.db = self.client[key]
         self.fs = gridfs.GridFS(self.db, self.shard_gridfs_collection)
 
-    def persist_file(self, key, file_content, info, filename):
+    def persist_file(self, key, file_content, info, filename,url=None):
         self.inti_fs(key.split("_")[0])
         contentType = os.path.splitext(filename)[1][1:].lower()
-        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType)
+        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType,url=url)
         checksum = self.fs.get(book_file_id).md5
         return (book_file_id, checksum)
 
@@ -89,7 +89,7 @@ class MongodbFilesPipeline(FilesPipeline):
 
     MEDIA_NAME = 'mongodb_openslackfile'
     EXPIRES = 90
-    FILE_CONTENT_TYPE = ['image/png','image/jpeg']
+    FILE_CONTENT_TYPE = ['image/png','image/jpeg',"image/gif"]
     URL_GBK_DOMAIN = []
     ATTACHMENT_FILENAME_UTF8_DOMAIN = []
     FILES_RESULT_FIELD = "files"
@@ -210,7 +210,7 @@ class MongodbFilesPipeline(FilesPipeline):
 
         try:
             key = self.file_key(info.spider.name, request.url)  # return the SHA1 hash of the file url
-            book_file_id, checksum = self.store.persist_file(key, response.body, info, filename)
+            book_file_id, checksum = self.store.persist_file(key, response.body, info, filename,url=request.url)
         except FileException as exc:
             whyfmt = '%(medianame)s (error): Error processing %(medianame)s from %(request)s referred in <%(referer)s>: %(errormsg)s'
             log.msg(format=whyfmt, level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
@@ -244,7 +244,7 @@ class MongodbFilesPipeline(FilesPipeline):
             self.inc_stats(info.spider, 'uptodate')
 
             checksum = result.get('checksum', None)
-
+            # print request.url,"----------------------"
             return {'url': request.url, 'file_id': key, 'checksum': checksum}
 
         key = self.file_key(info.spider.name, request.url)  # return the SHA1 hash of the file url
@@ -289,7 +289,8 @@ class MongodbFilesPipeline(FilesPipeline):
             judge whether is it a valid response by the Content-Type.
         """
         content_type = response.headers.get('Content-Type', '')
-        return content_type not in self.FILE_CONTENT_TYPE
+        # return content_type not in self.FILE_CONTENT_TYPE
+        return False
 
     def get_file_name(self, request, response):
         """
@@ -316,7 +317,7 @@ class MongodbFilesPipeline(FilesPipeline):
                 filename = filename.decode("gbk")
                 # print "Content-Disposition:","*"*30,filename
         else:
-            guessname = request.url.split('/')[-1]
+            guessname = request.url.split('?')[0].split("/")[-1]
             # os.path.splitext:
             # Split the pathname path into a pair (root, ext) such that root + ext == path
             if os.path.splitext(guessname)[1].lower() in self.FILE_EXTENTION:
@@ -325,4 +326,8 @@ class MongodbFilesPipeline(FilesPipeline):
                 else:
                     filename = urllib.unquote(guessname)
                     # print "url:","*"*30,filename
+            else:
+                filename=guessname
+            if filename.count(".")==0:
+                filename+=".jpg"
         return filename
