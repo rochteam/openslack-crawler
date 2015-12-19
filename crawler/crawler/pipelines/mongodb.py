@@ -181,7 +181,6 @@ class MongoDBPipeline(object):
         :param spider: The spider running the queries
         :returns: Item object
         """
-        print "----------------------"
         # item = dict(self._get_serialized_fields(item))
         spider.action_successful = True
         if self.config['buffer']:

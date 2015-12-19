@@ -93,7 +93,7 @@ class MongodbFilesPipeline(FilesPipeline):
 
     MEDIA_NAME = 'mongodb_openslackfile'
     EXPIRES = 90
-    FILE_CONTENT_TYPE = ["image/png"]
+    FILE_CONTENT_TYPE = ['image/png','image/jpeg']
     URL_GBK_DOMAIN = []
     ATTACHMENT_FILENAME_UTF8_DOMAIN = []
     FILES_RESULT_FIELD = "files"
@@ -103,7 +103,10 @@ class MongodbFilesPipeline(FilesPipeline):
         'mongodb': MongodbBookFilesStore,
     }
 
-    FILE_EXTENTION = ['.doc', '.txt', '.docx', '.rar', '.zip', '.pdf', ".png"]
+    FILE_EXTENTION = ['.rar', '.zip', '.pdf', '.tar', '.tar.gz', '.tar.bz2',
+                      '.xlsx', 'xls', 'ppt', 'pptx', '.doc', '.txt', '.docx',
+                      '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico',
+                    ]
 
     def __init__(self, shard_server, shard_port, shard_db, shard_gridfs_collection, download_func=None):
         self.style = color.color_style()
