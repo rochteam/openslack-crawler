@@ -50,7 +50,7 @@ class MongodbBookFilesStore(FSFilesStore):
     ShardMONGODB_SERVER = "localhost"
     ShardMONGODB_PORT = 27017
     ShardMONGODB_DB = "openslack"
-    GridFs_Collection = "openslack"
+    GridFs_Collection = "fs"
 
     def __init__(self, shard_server, shard_port, shard_db, shard_gridfs_collection):
         self.style = color.color_style()
@@ -128,7 +128,7 @@ class MongodbFilesPipeline(FilesPipeline):
         shard_server = settings.get('ShardMONGODB_SERVER', "localhost")
         shard_port = settings.get('ShardMONGODB_PORT', 27017)
         shard_db = settings.get('ShardMONGODB_DB', "openslack")
-        shard_gridfs_collection = settings.get('GridFs_Collection', 'openslack')
+        shard_gridfs_collection = settings.get('GridFs_Collection', 'fs')
         return cls(shard_server, shard_port, shard_db, shard_gridfs_collection)
 
     def _get_store(self, shard_server, shard_port, shard_db, shard_gridfs_collection):
