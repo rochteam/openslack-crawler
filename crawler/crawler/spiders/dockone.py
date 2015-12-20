@@ -52,11 +52,8 @@ class DockeOneSpider(Spider):
             item["tags"].append(t.xpath('./a/text()').extract()[0])
         item["id"]=item["url"].replace("http://dockone.io/article/","")
         # print base_item
-        item["spider"]=self.name
-        item["db"]=self.name
         item["collection"]="article"
         item["category"] = "doc"
-        item["created"] = int(time.time())
         item["image_urls"]=sel.xpath('//div[@class="content markitup-box"]//img/@src').extract()
         item["file_urls"]=item["image_urls"]
         # print item["file_urls"]

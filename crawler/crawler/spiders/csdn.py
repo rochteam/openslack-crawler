@@ -67,8 +67,8 @@ class CsdnSpider(CrawlSpider):
                 item["categorys"] = categorys[0].strip().replace("[",
                                                                                                                "").replace(
                     "]", "")
-            # item["digg"] = sel.xpath('.//span[@class="fr digg"]/@digg').extract()[0].strip()
-            # item["bury"] = sel.xpath('.//span[@class="fr digg"]/@bury').extract()[0].strip()
+            item["digg"] = int(sel.xpath('.//span[@class="fr digg"]/@digg').extract()[0].strip())
+            item["bury"] = int(sel.xpath('.//span[@class="fr digg"]/@bury').extract()[0].strip())
             yield Request(link, meta={"base_item": item}, callback=self.parse_blog_detail)
 
     def parse_blog_detail(self, response):
@@ -86,11 +86,8 @@ class CsdnSpider(CrawlSpider):
         item["comments_count"] = sel.xpath("//span[@class='link_comments']/text()").re(NUM_RE)[0].strip()
         item["image_urls"] = sel.xpath('//div[@id="article_content"]//img/@src').extract()
         item["file_urls"] = item["image_urls"]
-        item["spider"] = self.name
-        item["db"] = self.name
         item["collection"] = "blog"
         item["category"] = "doc"
-        item["created"] = int(time.time())
 
         user_item["fullname"] = sel.xpath("//div[@id='blog_userface']//a[@class='user_name']/text()").extract()[
             0].strip()
@@ -103,11 +100,7 @@ class CsdnSpider(CrawlSpider):
         user_item["views"] = blog_rank[0]
         user_item["credits"] = blog_rank[1]
         user_item["rank"] = blog_rank[2] if len(blog_rank)==3 else 0
-        user_item["spider"] = self.name
-        user_item["db"] = self.name
         user_item["collection"] = "user"
-        user_item["category"] = "doc"
-        user_item["created"] = int(time.time())
         user_item["image_urls"] = [user_item["avatar"]]
         user_item["file_urls"] = user_item["image_urls"]
         return [item,user_item]

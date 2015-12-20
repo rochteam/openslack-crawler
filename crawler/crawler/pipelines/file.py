@@ -11,7 +11,7 @@ import datetime
 from scrapy import log
 from scrapy.item import Item
 from urlparse import urlparse
-from pprint import pprint
+import logging
 from twisted.internet import defer
 from scrapy.http import Request
 from crawler.utils import color
@@ -22,6 +22,9 @@ from crawler.utils.select_result import list_first_item
 from scrapy.pipelines.files import FileException, FilesPipeline, FSFilesStore
 from scrapy.exceptions import DropItem, NotConfigured
 import urllib
+from scrapy.utils.log import failure_to_exc_info
+
+logger = logging.getLogger(__name__)
 
 
 class NofilesDrop(DropItem):
@@ -263,24 +266,14 @@ class MongodbFilesPipeline(FilesPipeline):
 
     def item_completed(self, results, item, info):
         if self.LOG_FAILED_RESULTS:
-            msg = '%s found errors proessing %s' % (self.__class__.__name__, item)
             for ok, value in results:
                 if not ok:
-                    log.err(value, msg, spider=info.spider)
-
-        # bookfile_ids_urls = [(x['book_file_id'],x['url']) for ok, x in results if ok]
-        # bookfile_id_url = list_first_item(bookfile_ids_urls)
-        # if bookfile_id_url:
-        #     item['cover_file_id'] = bookfile_id_url[0]
-        #     item['cover_file_url'] = bookfile_id_url[1]
-        #     return item
-        # else:
-        #     if self.item_download[item['original_url']]:
-        #         next = list_first_item(self.item_download[item['original_url']])
-        #         self.item_download[item['original_url']] = self.item_download[item['original_url']][1:]
-        #         return Request(next)
-        #     else:
-        #       return item
+                    logger.error(
+                        '%(class)s found errors processing %(item)s',
+                        {'class': self.__class__.__name__, 'item': item},
+                        exc_info=failure_to_exc_info(value),
+                        extra={'spider': info.spider}
+                    )
         item["files"] = [{"file_id": x['file_id'], "url": x['url']} for ok, x in results if ok]
         return item
 

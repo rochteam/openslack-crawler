@@ -121,11 +121,10 @@ STATS_DUMP = True
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-# 'scrapy.pipelines.files.FilesPipeline': 200,
-'crawler.pipelines.file.MongodbFilesPipeline': 200,
-'crawler.pipelines.mongodb.MongoDBPipeline': 400,
-# 'crawler.pipelines.AlibabaMongoDBPipeline': 800,
-# 'crawler.pipelines.mongo.MongoPipeline': 900,
+    'crawler.pipelines.standard.StandardFieldPipeline': 100,
+    'crawler.pipelines.file.MongodbFilesPipeline': 200,
+    'crawler.pipelines.mongodb.MongoDBPipeline': 300,
+    # 'crawler.pipelines.mongo.MongoPipeline': 900,
 }
 
 # DSCRAPER_IMAGES_STORE_FORMAT = 'ALL'
@@ -315,12 +314,12 @@ MAIL_PASS = "crawler"
 MAIL_TLS = False
 MAIL_SSL = False
 
-REDIS_UNIQUE_KEY = "alibaba.crawler.item.unique_key"
+REDIS_UNIQUE_KEY = "oepnslack.crawler.item.unique_key"
 
 LOCAL_HOST = "127.0.0.1"
 MONGO_HOST = LOCAL_HOST
 MONGODB_URI = "mongodb://" + MONGO_HOST + ":27017"
-MONGODB_DATABASE = 'alibaba'
+MONGODB_DATABASE = 'openslack'
 MONGODB_COLLECTION = 'items'
 MONGODB_ADD_TIMESTAMP = True
 MONGODB_UNIQUE_KEY = "url"
