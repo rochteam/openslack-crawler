@@ -24,7 +24,7 @@ class OSChinaSpider(CrawlSpider):
     def start_requests(self):
         for url in redis.smembers(self.name + ":translate_list"):
             yield Request(url, self.parse_translate)
-        yield Request("http://www.oschina.net/translate/list?type=2", self.parse_translate)
+        # yield Request("http://www.oschina.net/translate/list?type=2", self.parse_translate)
 
     rules = [
         # Rule(LinkExtractor(allow=("/translate/list")), follow=True, callback='parse_translate'),
@@ -38,11 +38,10 @@ class OSChinaSpider(CrawlSpider):
         pass
 
     def parse_translate(self, response):
-        page_nav = response.xpath("//ul[@class='pager']/a/@href").extract()
+        page_nav = response.xpath("//ul[@class='pager']//a/@href").extract()
         for l in page_nav:
             redis.sadd(self.name + ":translate_list", "http://www.oschina.net/translate/list" + l)
-        sel = Selector(response)
-        for url in sel.xpath('//div[@class="article"]//dt/a/@href').extract():
+        for url in response.xpath('//div[@class="article"]//dt/a/@href').extract():
             yield Request(url, callback=self.parse_translate_detail)
 
     def parse_translate_detail(self, response):
@@ -78,6 +77,6 @@ class OSChinaSpider(CrawlSpider):
         user_urls.extend(article_sel.xpath(".//div[@class='contributers']/a/@href").extract())
         for l in user_urls:
             redis.sadd(self.name + ":blog_user", l)
-        time.sleep(self.download_delay)
+        # time.sleep(self.download_delay)
         # print item
         return [item, user_item]
