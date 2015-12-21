@@ -36,11 +36,11 @@ class CsdnSpider(CrawlSpider):
             else:
                 redis.srem(self.name + ":blog_user",url)
 
-        for url in redis.smembers(self.name + ":blog_list"):
-            if url.startswith("http"):
-                yield Request(url, self.parse_blog_list)
-            else:
-                redis.srem(self.name + ":blog_list",url)
+        # for url in redis.smembers(self.name + ":blog_list"):
+        #     if url.startswith("http"):
+        #         yield Request(url, self.parse_blog_list)
+        #     else:
+        #         redis.srem(self.name + ":blog_list",url)
 
     download_delay = 2
     rules = (
