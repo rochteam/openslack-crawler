@@ -306,7 +306,7 @@ USER_AGENT = random.choice(USER_AGENTS)
 # These settings define the default constructor values of the MailSender class,
 # and can be used to configure e-mail notifications in your project without writing any code
 # (for those extensions and code that uses MailSender).
-MAIL_FROM = "crawler@yueguangba.com"
+MAIL_FROM = "crawler@openslack.com"
 MAIL_HOST = "localhost"
 MAIL_PORT = 25
 MAIL_USER = "crawler"
