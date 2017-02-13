@@ -8,7 +8,7 @@ from scrapy import log, project, signals
 from twisted.internet import reactor
 from billiard import Process
 from scrapy.utils.project import get_project_settings
-from crawler.spiders.cnblogs import MySpider
+from crawler.spiders.cnblogs import CnblogsSpider
 
 from celery.utils.log import get_task_logger
 
@@ -32,7 +32,7 @@ class UrlCrawlerScript(Process):
             # reactor.run()
 
 def run_spider(url):
-    spider = MySpider(url)
+    spider = CnblogsSpider(url)
     crawler = UrlCrawlerScript(spider)
     crawler.start()
     crawler.join()
