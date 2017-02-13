@@ -1,1 +1,0 @@
-# http://blog.simonwillison.net/
