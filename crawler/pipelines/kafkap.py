@@ -2,7 +2,7 @@ import datetime as dt
 
 from kafka.client import KafkaClient
 from kafka.producer import SimpleProducer
-
+import traceback
 import json
 
 
@@ -30,21 +30,15 @@ class KafkaPipeline(object):
         datum = dict(item)
         datum["timestamp"] = dt.datetime.utcnow().isoformat()
         prefix = self.topic_prefix
-        appid_topic = "{prefix}.crawled_{appid}".format(prefix=prefix,
-                                                        appid=datum["appid"])
-        firehose_topic = "{prefix}.crawled_firehose".format(prefix=prefix)
+        appid_topic = "{prefix}.crawled_{spider}".format(prefix=prefix, spider=spider.name)
+        self.checkTopic(appid_topic)
         try:
             message = json.dumps(datum)
-        except:
+            self.producer.send_messages(appid_topic, message)
+        except Exception,e:
+            traceback.print_exc()
             message = 'json failed to parse'
-
-        self.checkTopic(appid_topic)
-        self.checkTopic(firehose_topic)
-
-        self.producer.send_messages(appid_topic, message)
-        self.producer.send_messages(firehose_topic, message)
-
-        return item
+        return None
 
     def checkTopic(self, topicName):
         if topicName not in self.topic_list:
