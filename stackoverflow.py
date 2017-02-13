@@ -3,8 +3,8 @@ import time, pymongo
 from elasticsearch import Elasticsearch
 from django.utils.html import strip_tags
 
-es = Elasticsearch([{'host': "127.0.0.1"}])
-conn = pymongo.MongoClient("127.0.0.1", 27017)
+es = Elasticsearch([{'host': "192.168.0.107"}])
+conn = pymongo.MongoClient("192.168.0.107", 27017)
 stackoverflowdb = conn.stackoverflow
 
 def save_es(items):
@@ -18,14 +18,20 @@ def save_es(items):
         },
         "mappings": {
             _type: {
+                 "_all": {
+                        "analyzer": "ik_smart",
+                        "search_analyzer": "ik_smart",
+                        "term_vector": "no",
+                        "store": "false"
+                    },
                 "properties": {
                     'body': {
                         'type': 'string',
-                        'analyzer': 'snowball'
+                        'analyzer': 'ik_smart'
                     },
                     'title': {
                         'type': 'string',
-                        'analyzer': 'snowball'
+                        'analyzer': 'ik_smart'
                     },
                 }
             }
