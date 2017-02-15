@@ -61,7 +61,7 @@ def run_spider2(spider, *args):
     run.run_spider2(spider, *args)
 
 
-@app.shared_task()
+@app.task
 def crawl(domain):
     return run_spider(domain)
 
