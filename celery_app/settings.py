@@ -1,4 +1,5 @@
 # encoding:utf-8
+from __future__ import absolute_import, unicode_literals
 import os
 
 # import eventlet
@@ -33,7 +34,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0) Gecko/20100101 Firefox
 CELERY_ACKS_LATE = True
 # CELERY_ALWAYS_EAGER=True#主动delay
 # using serializer name
-CELERY_RESULT_BACKEND = 'djcelery.backends.cache:CacheBackend'  #
+# CELERY_RESULT_BACKEND = 'djcelery.backends.cache:CacheBackend'  #
 CELERY_TASK_RESULT_EXPIRES = 7200  # 3600秒
 CELERY_RESULT_PERSISTENT = True
 CELERY_DISABLE_RATE_LIMITS = False

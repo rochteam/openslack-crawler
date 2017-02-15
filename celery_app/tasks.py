@@ -1,42 +1,90 @@
-# http://stackoverflow.com/questions/24232744/scrapy-spider-not-following-links-when-using-celery
+# -*- coding: utf-8 -*-
 
-from celery.app import shared_task
-from celery.app.base import Celery
-from scrapy.crawler import Crawler
-from scrapy.conf import settings
-from scrapy import log, project, signals
-from twisted.internet import reactor
-from billiard import Process
-from scrapy.utils.project import get_project_settings
-from crawler.spiders.cnblogs import CnblogsSpider
-
+from __future__ import absolute_import, unicode_literals
+from .celery import app
+from celery import group
+from crawler import run
 from celery.utils.log import get_task_logger
-
-app = Celery('tasks', broker='amqp://guest@localhost//')
-app.config_from_object('celeryconfig')
+from .storage import mongo_pipeline
+from .download import image_pipeline
 
 logger = get_task_logger(__name__)
+from .bloomfilter import BloomFilter
 
-class UrlCrawlerScript(Process):
-        def __init__(self, spider):
-            Process.__init__(self)
-            settings = get_project_settings()
-            self.crawler = Crawler(settings)
-            self.crawler.configure()
-            # self.crawler.signals.connect(reactor.stop, signal=signals.spider_closed)
-            self.spider = spider
+# url 去重装置
+bf = BloomFilter(host='localhost', port=6379, db=0)
 
-        def run(self):
-            self.crawler.crawl(self.spider)
-            self.crawler.start()
-            # reactor.run()
-
-def run_spider(url):
-    spider = CnblogsSpider(url)
-    crawler = UrlCrawlerScript(spider)
-    crawler.start()
-    crawler.join()
 
 @app.task
+def crawler(url):
+    """
+    即是消费者也是产出者
+    :param url:
+    """
+    wanted_urls = []
+    need_store = []
+    image_urls = []
+    # print('crawling: {0}'.format(url))
+
+    urls, need_store, images = _spider.run(url)
+
+    # filter not repeated url
+    for _im in images:
+        if not bf.isContains(_im):
+            bf.insert(_im)
+            image_urls.append(_im)
+
+    # filter not repeated url
+    for _url in urls:
+        if not bf.isContains(_url):
+            bf.insert(_url)
+            wanted_urls.append(_url)
+        wanted_urls.append(_url)
+
+    # 数据库存储
+    if need_store:
+        mongo_pipeline.delay(need_store)
+
+    # 图片下载
+    image_tasks = group(image_pipeline.s(image) for image in image_urls)
+    image_tasks()
+
+    sub_tasks = group(crawler.s(url) for url in wanted_urls).skew(start=1)
+    sub_tasks()
+
+
+def run_spider(spider, *args):
+    run.run_spider(spider, *args)
+
+
+def run_spider2(spider, *args):
+    run.run_spider2(spider, *args)
+
+
+@app.shared_task()
 def crawl(domain):
     return run_spider(domain)
+
+
+    # @app.task(bind=True, default_retry_delay=10, max_reties=3, base=DebugTask)
+    # def add(self, x, y):
+    #     logger.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    #     logger.info(self.request)
+    #     try:
+    #         return x + y
+    #     except Exception as e:
+    #         return self.retry(exc=e)
+
+
+    # @periodic_task(run_every=timedelta(seconds=10), exchange="default", routing_key="default")
+    # def every_monday_morning():
+    #     print("This is run every Monday morning at 7:30")
+    #     return 1
+
+    # class Lmy(PeriodicTask):
+    #     run_every = timedelta(seconds=60)
+    #     options = {"exchange": "default", "routing_key": "default"}
+    #     name = "xxxxx"
+    #
+    #     def run(self):
+    #         pass

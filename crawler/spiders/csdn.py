@@ -22,6 +22,9 @@ class CsdnSpider(CrawlSpider):
     #     'http://blog.csdn.net/ranking.html',
     #     'http://blog.csdn.net/ranking.html',
     # )
+    def __init__(self,a,b,c):
+        print a,b,c
+
     def start_requests(self):
         yield Request("http://blog.csdn.net/index.html?&page=1", self.parse_blog_list)
         # yield Request("http://blog.csdn.net/bole.html?&page=1", self.parse_blog_list)

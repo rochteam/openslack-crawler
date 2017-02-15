@@ -15,9 +15,9 @@ sys.setdefaultencoding('utf8')
 NUM_RE = re.compile(r"(\d+)")
 
 
-class CsdnSpider(CrawlSpider):
-    name = "csdn"
-    allowed_domains = ["csdn.net"]
+class LaGouSpider(CrawlSpider):
+    name = "lagou"
+    allowed_domains = ["lagou.com"]
     # start_urls = (
     #     'http://blog.csdn.net/ranking.html',
     #     'http://blog.csdn.net/ranking.html',

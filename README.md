@@ -17,4 +17,10 @@
 
 # mesos+marathon
 
-可以基于docker、mesos、marathon等构建云采集。
+可以基于docker、mesos、marathon等构建云采集
+
+
+# run celery work
+```
+celery -A celery_app worker -l info
+```。
