@@ -17,7 +17,6 @@ try:
 except:
     from scrapy.spider import BaseSpider as Spider
 from scrapy.utils.response import get_base_url
-from scrapy import log
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors.sgml import SgmlLinkExtractor as sle
 

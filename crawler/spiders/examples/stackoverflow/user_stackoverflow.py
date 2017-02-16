@@ -4,7 +4,7 @@
 import exceptions
 import scrapy
 
-from scrapy import log
+import logging as log
 
 from twcrawler.items import StackoverflowUserItem
 from twcrawler.utils import Colorizing, extract_text

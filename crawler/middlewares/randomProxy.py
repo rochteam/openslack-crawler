@@ -3,7 +3,7 @@
 
 import random
 
-from scrapy import log
+import logging as log
 from scrapy.exceptions import NotConfigured
 
 

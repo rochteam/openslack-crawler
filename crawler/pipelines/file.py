@@ -8,7 +8,7 @@ import hashlib
 import urlparse
 import traceback
 import datetime
-from scrapy import log
+import logging as log
 from scrapy.item import Item
 from urlparse import urlparse
 import logging

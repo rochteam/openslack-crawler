@@ -2,7 +2,7 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.contrib.linkextractors.sgml import SgmlLinkExtractor
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.http import Request
-from scrapy import log
+import logging as log
 from linkedin.items import LinkedinItem, PersonProfileItem
 from os import path
 from linkedin.parser.HtmlParser import HtmlParser

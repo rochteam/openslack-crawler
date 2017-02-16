@@ -8,7 +8,7 @@ import re
 from scrapy.spider import BaseSpider
 from scrapy.selector import Selector
 from scrapy.http import Request
-from scrapy import log
+import logging as log
 
 from scrapy_ctrip.items import hotelReview
 

@@ -63,7 +63,7 @@ def run_spider2(spider, *args):
 
 @app.task
 def crawl(domain):
-    return run_spider(domain)
+    return run_spider(spider)
 
 
     # @app.task(bind=True, default_retry_delay=10, max_reties=3, base=DebugTask)

@@ -1,6 +1,7 @@
 from twisted.web import server, resource
 from scrapy.exceptions import NotConfigured
-from scrapy import log, signals
+import logging as log
+from scrapy import signals
 from scrapy.utils.reactor import listen_tcp
 
 from scrapy_jsonrpc.jsonrpc import jsonrpc_server_call

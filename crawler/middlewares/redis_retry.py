@@ -1,5 +1,5 @@
 from scrapy.contrib.downloadermiddleware.retry import RetryMiddleware
-from scrapy import log
+import logging as log
 
 
 class RedisRetryMiddleware(RetryMiddleware):
