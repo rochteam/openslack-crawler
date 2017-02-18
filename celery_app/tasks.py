@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, unicode_literals
-from .celery import app
+from main import app
 from celery import group
 from crawler import run
 from celery.utils.log import get_task_logger
-from .storage import mongo_pipeline
-from .download import image_pipeline
+from storage import STORAGE_MAPS
+from download import image_pipeline
+import storage
+from pybloom import BloomFilter
 
 logger = get_task_logger(__name__)
-from .bloomfilter import BloomFilter
 
-# url 去重装置
-bf = BloomFilter(host='localhost', port=6379, db=0)
+bf = BloomFilter(host='localhost', port=6379, db=0)  # url 去重装置
 
 
 @app.task
@@ -26,7 +24,7 @@ def crawler(url):
     image_urls = []
     # print('crawling: {0}'.format(url))
 
-    urls, need_store, images = _spider.run(url)
+    urls, need_store, images = run(url)
 
     # filter not repeated url
     for _im in images:
@@ -43,7 +41,7 @@ def crawler(url):
 
     # 数据库存储
     if need_store:
-        mongo_pipeline.delay(need_store)
+        storage_pipeline.delay(need_store)
 
     # 图片下载
     image_tasks = group(image_pipeline.s(image) for image in image_urls)
@@ -62,9 +60,22 @@ def run_spider2(spider, *args):
 
 
 @app.task
-def crawl(domain):
-    return run_spider(spider)
+def storage_pipeline(name, data):
+    if name in STORAGE_MAPS:
+        class_name = STORAGE_MAPS[name]
+        obj = getattr(storage, class_name)
+        if isinstance([], list):
+            obj().save_many("a", "b", "c")
+        else:
+            obj().save_many("a", "b", "c")
+        return ""
+    else:
+        logger.warn("not find storage")
 
+
+@app.task
+def crawl(spider):
+    return run_spider(spider)
 
     # @app.task(bind=True, default_retry_delay=10, max_reties=3, base=DebugTask)
     # def add(self, x, y):
@@ -88,3 +99,10 @@ def crawl(domain):
     #
     #     def run(self):
     #         pass
+
+
+if __name__ == '__main__':
+    pass
+    # from crawler.spiders.cnblogs import CnblogsSpider
+    #
+    # crawl(CnblogsSpider)

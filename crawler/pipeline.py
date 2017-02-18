@@ -1,0 +1,3 @@
+
+class Celery():
+    pass

@@ -121,10 +121,7 @@ STATS_DUMP = True
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'crawler.pipelines.standard.StandardFieldPipeline': 100,
-    'crawler.pipelines.file.MongodbFilesPipeline': 200,
-    'crawler.pipelines.mongodb.MongoDBPipeline': 300,
-    # 'crawler.pipelines.mongo.MongoPipeline': 900,
+    'crawler.pipeline.Celery': 100,
 }
 
 # DSCRAPER_IMAGES_STORE_FORMAT = 'ALL'
