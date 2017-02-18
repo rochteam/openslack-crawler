@@ -6,7 +6,7 @@ from celery.utils.log import get_task_logger
 from storage import STORAGE_MAPS
 from download import image_pipeline
 import storage
-from pybloom import BloomFilter
+from crawler.utils.bloomfilter import BloomFilter
 
 logger = get_task_logger(__name__)
 
