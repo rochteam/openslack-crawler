@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import gridfs,urllib,sys,os,traceback,datetime,hashlib
+import gridfs, urllib, sys, os, traceback, datetime, hashlib
 from urlparse import urlparse
 from twisted.internet import defer
 from crawler.utils import color
@@ -13,12 +13,13 @@ from scrapy.utils.log import failure_to_exc_info
 from scrapy.contrib.pipeline.images import ImagesPipeline
 from scrapy.exceptions import DropItem
 from scrapy.http import Request
-import logging as log
+from celery.utils.log import get_task_logger
 from crawler.utils.select_result import list_first_item
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-logger = log.getLogger(__name__)
+log = get_task_logger(__name__)
 
 
 class NofilesDrop(DropItem):
@@ -59,10 +60,10 @@ class MongodbFilesStore(FSFilesStore):
         self.db = self.client[key]
         self.fs = gridfs.GridFS(self.db, self.shard_gridfs_collection)
 
-    def persist_file(self, key, file_content, info, filename,url=None):
+    def persist_file(self, key, file_content, info, filename, url=None):
         self.inti_fs(key.split("_")[0])
         contentType = os.path.splitext(filename)[1][1:].lower()
-        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType,url=url)
+        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType, url=url)
         checksum = self.fs.get(book_file_id).md5
         return (book_file_id, checksum)
 
@@ -86,7 +87,7 @@ class MongodbFilesPipeline(FilesPipeline):
 
     MEDIA_NAME = 'mongodb_openslackfile'
     EXPIRES = 90
-    FILE_CONTENT_TYPE = ['image/png','image/jpeg',"image/gif"]
+    FILE_CONTENT_TYPE = ['image/png', 'image/jpeg', "image/gif"]
     URL_GBK_DOMAIN = []
     ATTACHMENT_FILENAME_UTF8_DOMAIN = []
     FILES_RESULT_FIELD = "files"
@@ -99,7 +100,7 @@ class MongodbFilesPipeline(FilesPipeline):
     FILE_EXTENTION = ['.rar', '.zip', '.pdf', '.tar', '.tar.gz', '.tar.bz2',
                       '.xlsx', 'xls', 'ppt', 'pptx', '.doc', '.txt', '.docx',
                       '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico',
-                    ]
+                      ]
 
     def __init__(self, shard_server, shard_port, shard_db, shard_gridfs_collection, download_func=None):
         self.style = color.color_style()
@@ -206,7 +207,7 @@ class MongodbFilesPipeline(FilesPipeline):
 
         try:
             key = self.file_key(info.spider.name, request.url)  # return the SHA1 hash of the file url
-            book_file_id, checksum = self.store.persist_file(key, response.body, info, filename,url=request.url)
+            book_file_id, checksum = self.store.persist_file(key, response.body, info, filename, url=request.url)
         except FileException as exc:
             whyfmt = '%(medianame)s (error): Error processing %(medianame)s from %(request)s referred in <%(referer)s>: %(errormsg)s'
             log.msg(format=whyfmt, level=log.WARNING, spider=info.spider, medianame=self.MEDIA_NAME,
@@ -261,7 +262,7 @@ class MongodbFilesPipeline(FilesPipeline):
         if self.LOG_FAILED_RESULTS:
             for ok, value in results:
                 if not ok:
-                    logger.error(
+                    log.error(
                         '%(class)s found errors processing %(item)s',
                         {'class': self.__class__.__name__, 'item': item},
                         exc_info=failure_to_exc_info(value),
@@ -313,14 +314,13 @@ class MongodbFilesPipeline(FilesPipeline):
                     filename = urllib.unquote(guessname)
                     # print "url:","*"*30,filename
             else:
-                filename=guessname
-            if filename.count(".")==0:
-                filename+=".jpg"
+                filename = guessname
+            if filename.count(".") == 0:
+                filename += ".jpg"
         return filename
 
 
 class LocalImagesPipeline(ImagesPipeline):
-
     def __init__(self, *args, **kwargs):
         super(LocalImagesPipeline, self).__init__(*args, **kwargs)
 

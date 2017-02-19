@@ -42,7 +42,6 @@ CELERY_IGNORE_RESULT = True
 CELERY_RESULT_EXCHANGE_TYPE = "topic"
 CELERY_RESULT_EXCHANGE = "crawler.collect.topic"
 CELERY_QUEUE_HA_POLICY = 'all'
-CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
 BROKER_URL = "amqp://admin:admin@127.0.0.1:5672/crawler"  #
 #: Only add pickle to this list if your broker is secured
 #: from unwanted access (see userguide/security.html)

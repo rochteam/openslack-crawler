@@ -22,5 +22,6 @@
 
 # run celery work
 ```
-celery -A celery_app worker -l info
+celery -A main worker -l info
+celery -A main beat -l info -s /var/run/celery/beat-schedule --detach
 ```。

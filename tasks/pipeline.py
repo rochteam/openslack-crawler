@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from celery_app.main import app
+from main import app
 from celery import group
 from crawler import run
 from celery.utils.log import get_task_logger
@@ -23,7 +23,7 @@ def crawler(url):
     image_urls = []
     # print('crawling: {0}'.format(url))
 
-    urls, need_store, images = run(url)
+    urls, need_store, images = run_spider(url)
 
     # filter not repeated url
     for _im in images:
@@ -71,10 +71,6 @@ def storage_pipeline(name, data):
     else:
         logger.warn("not find storage")
 
-
-@app.task
-def crawl(spider):
-    return run_spider(spider)
 
 @app.task
 def image_pipeline(url):
