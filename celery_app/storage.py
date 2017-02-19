@@ -40,7 +40,7 @@ class BasePipeline:
 class ElasticSearchPipeline(BasePipeline):
     name = "elasticsearch"
 
-    def __init__(self, es, doc_type, index):
+    def __init__(self, es=None, doc_type=None, index=None):
         BasePipeline.__init__(self)
         self.es = es
         self.index = index
@@ -100,7 +100,7 @@ class ElasticSearchPipeline(BasePipeline):
 class KafkaPipeline(BasePipeline):
     name = "kafka"
 
-    def __init__(self, producer, topic_prefix, aKafka):
+    def __init__(self, producer=None, topic_prefix=None, aKafka=None):
         BasePipeline.__init__(self)
         self.producer = producer
         self.topic_prefix = topic_prefix

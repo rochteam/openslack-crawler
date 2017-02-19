@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from main import app
+from celery_app.main import app
 from celery import group
 from crawler import run
 from celery.utils.log import get_task_logger
 from storage import STORAGE_MAPS
-from download import image_pipeline
 import storage
 from crawler.utils.bloomfilter import BloomFilter
 
@@ -76,6 +75,11 @@ def storage_pipeline(name, data):
 @app.task
 def crawl(spider):
     return run_spider(spider)
+
+@app.task
+def image_pipeline(url):
+    pass
+    # _spider.download(url)
 
     # @app.task(bind=True, default_retry_delay=10, max_reties=3, base=DebugTask)
     # def add(self, x, y):
