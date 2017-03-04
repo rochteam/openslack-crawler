@@ -14,7 +14,7 @@
 
 基于docker、mesos、marathon等构建云采集
 
-```
+```bash
 docker run --name zookeeper --net=host --restart always -d zookeeper
 
 docker run -d \
@@ -71,7 +71,8 @@ docker build openslack/crawler:0.1 .
 
 
 # deploy spider with marathon
-```
+
+```json
 {
   "id": "crawler/csdn",
   "args": "csdn",
@@ -106,4 +107,4 @@ docker build openslack/crawler:0.1 .
     ]
   ]
 }
-```。
+```
