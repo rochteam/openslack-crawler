@@ -1,83 +1,3 @@
-# -*- coding: utf-8 -*-
-
-import gridfs, urllib, sys, os, traceback, datetime, hashlib
-from urlparse import urlparse
-from twisted.internet import defer
-from crawler.utils import color
-from pymongo import MongoClient
-from twisted.internet.defer import DeferredList
-from scrapy.utils.misc import arg_to_iter
-from scrapy.item import Item
-from scrapy.pipelines.files import FileException, FilesPipeline, FSFilesStore
-from scrapy.utils.log import failure_to_exc_info
-from scrapy.contrib.pipeline.images import ImagesPipeline
-from scrapy.exceptions import DropItem
-from scrapy.http import Request
-from celery.utils.log import get_task_logger
-from crawler.utils.select_result import list_first_item
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
-log = get_task_logger(__name__)
-
-
-class NofilesDrop(DropItem):
-    """Product with no files exception"""
-
-    def __init__(self, original_url="", *args):
-        self.original_url = original_url
-        self.style = color.color_style()
-        DropItem.__init__(self, *args)
-
-    def __str__(self):  #####for usage: print e
-        print self.style.ERROR("DROP(NofilesDrop):" + self.original_url)
-
-        return DropItem.__str__(self)
-
-
-class MongodbFilesStore(FSFilesStore):
-    """
-        save book file to gridfs of mongodb.
-    """
-
-    ShardMONGODB_SERVER = "localhost"
-    ShardMONGODB_PORT = 27017
-    ShardMONGODB_DB = "openslack"
-    GridFs_Collection = "fs"
-
-    def __init__(self, shard_server, shard_port, shard_db, shard_gridfs_collection):
-        self.style = color.color_style()
-        self.shard_gridfs_collection = shard_gridfs_collection
-        try:
-            self.client = MongoClient(shard_server, shard_port)
-            # self.inti_fs(shard_db)
-        except Exception as e:
-            print self.style.ERROR("ERROR(MongodbFilesStore): %s" % (str(e),))
-            traceback.print_exc()
-
-    def inti_fs(self, key):
-        self.db = self.client[key]
-        self.fs = gridfs.GridFS(self.db, self.shard_gridfs_collection)
-
-    def persist_file(self, key, file_content, info, filename, url=None):
-        self.inti_fs(key.split("_")[0])
-        contentType = os.path.splitext(filename)[1][1:].lower()
-        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType, url=url)
-        checksum = self.fs.get(book_file_id).md5
-        return (book_file_id, checksum)
-
-    def stat_file(self, key, info):
-        """
-            the stat is the file key dir,
-            the last_modified is the file that saved to the file key dir.
-        """
-        self.inti_fs(key.split("_")[0])
-        checksum = self.fs.get(key).md5
-        last_modified = self.fs.get(key).upload_date
-
-        return {'last_modified': last_modified, 'checksum': checksum}
-
 
 class MongodbFilesPipeline(FilesPipeline):
     """
@@ -320,39 +240,44 @@ class MongodbFilesPipeline(FilesPipeline):
         return filename
 
 
-class LocalImagesPipeline(ImagesPipeline):
-    def __init__(self, *args, **kwargs):
-        super(LocalImagesPipeline, self).__init__(*args, **kwargs)
-
-    def get_media_requests(self, item, info):
-        for url in item["urls"]:
-            yield Request(url)
-
-
-class WoaiduCoverImage(ImagesPipeline):
+class MongodbFilesStore(FSFilesStore):
     """
-        this is for download the book covor image and then complete the
-        book_covor_image_path field to the picture's path in the file system.
+        save book file to gridfs of mongodb.
     """
 
-    def __init__(self, store_uri, download_func=None):
-        self.images_store = store_uri
-        super(WoaiduCoverImage, self).__init__(store_uri, download_func=None)
+    ShardMONGODB_SERVER = "localhost"
+    ShardMONGODB_PORT = 27017
+    ShardMONGODB_DB = "openslack"
+    GridFs_Collection = "fs"
 
-    def get_media_requests(self, item, info):
-        if item.get('book_covor_image_url'):
-            yield Request(item['book_covor_image_url'])
+    def __init__(self, shard_server, shard_port, shard_db, shard_gridfs_collection):
+        self.style = color.color_style()
+        self.shard_gridfs_collection = shard_gridfs_collection
+        try:
+            self.client = MongoClient(shard_server, shard_port)
+            # self.inti_fs(shard_db)
+        except Exception as e:
+            print self.style.ERROR("ERROR(MongodbFilesStore): %s" % (str(e),))
+            traceback.print_exc()
 
-    def item_completed(self, results, item, info):
-        if self.LOG_FAILED_RESULTS:
-            msg = '%s found errors proessing %s' % (self.__class__.__name__, item)
-            for ok, value in results:
-                if not ok:
-                    log.err(value, msg, spider=info.spider)
+    def inti_fs(self, key):
+        self.db = self.client[key]
+        self.fs = gridfs.GridFS(self.db, self.shard_gridfs_collection)
 
-        image_paths = [x['path'] for ok, x in results if ok]
-        image_path = list_first_item(image_paths)
-        item['book_covor_image_path'] = os.path.join(os.path.abspath(self.images_store),
-                                                     image_path) if image_path else ""
+    def persist_file(self, key, file_content, info, filename, url=None):
+        self.inti_fs(key.split("_")[0])
+        contentType = os.path.splitext(filename)[1][1:].lower()
+        book_file_id = self.fs.put(file_content, _id=key, filename=filename, contentType=contentType, url=url)
+        checksum = self.fs.get(book_file_id).md5
+        return (book_file_id, checksum)
 
-        return item
+    def stat_file(self, key, info):
+        """
+            the stat is the file key dir,
+            the last_modified is the file that saved to the file key dir.
+        """
+        self.inti_fs(key.split("_")[0])
+        checksum = self.fs.get(key).md5
+        last_modified = self.fs.get(key).upload_date
+
+        return {'last_modified': last_modified, 'checksum': checksum}

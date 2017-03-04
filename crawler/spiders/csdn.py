@@ -3,7 +3,7 @@ import time
 import sys
 import re
 from scrapy.http import Request
-from scrapy.contrib.linkextractors import LinkExtractor
+from scrapy.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from scrapy.spiders import CrawlSpider, Rule
 import logging as log
@@ -22,8 +22,11 @@ class CsdnSpider(CrawlSpider):
     #     'http://blog.csdn.net/ranking.html',
     #     'http://blog.csdn.net/ranking.html',
     # )
-    def __init__(self,a,b,c):
-        print a,b,c
+
+    def __init__(self, a, b, c):
+        super(CsdnSpider, self).__init__()
+        self.logger.info('spider init %s', self.name)
+        print a, b, c
 
     def start_requests(self):
         yield Request("http://blog.csdn.net/index.html?&page=1", self.parse_blog_list)
@@ -37,13 +40,13 @@ class CsdnSpider(CrawlSpider):
             if url.startswith("http"):
                 yield Request(url, self.parse_blog_user)
             else:
-                redis.srem(self.name + ":blog_user",url)
+                redis.srem(self.name + ":blog_user", url)
 
-        # for url in redis.smembers(self.name + ":blog_list"):
-        #     if url.startswith("http"):
-        #         yield Request(url, self.parse_blog_list)
-        #     else:
-        #         redis.srem(self.name + ":blog_list",url)
+                # for url in redis.smembers(self.name + ":blog_list"):
+                #     if url.startswith("http"):
+                #         yield Request(url, self.parse_blog_list)
+                #     else:
+                #         redis.srem(self.name + ":blog_list",url)
 
     download_delay = 2
     rules = (
@@ -65,10 +68,10 @@ class CsdnSpider(CrawlSpider):
         for sel in response.xpath("//div[@class='blog_list']"):
             item = {}
             link = sel.xpath('./h1/a[last()]/@href').extract()[0].strip()
-            categorys=sel.xpath('./h1/a[@class="category"]/text()').extract()
+            categorys = sel.xpath('./h1/a[@class="category"]/text()').extract()
             if categorys:
                 item["categorys"] = categorys[0].strip().replace("[",
-                                                                                                               "").replace(
+                                                                 "").replace(
                     "]", "")
             item["digg"] = int(sel.xpath('.//span[@class="fr digg"]/@digg').extract()[0].strip())
             item["bury"] = int(sel.xpath('.//span[@class="fr digg"]/@bury').extract()[0].strip())
@@ -79,7 +82,7 @@ class CsdnSpider(CrawlSpider):
         item = response.meta["base_item"] if "base_item" in response.meta else {}
         url = response.url
         user_item = {}
-        item["id"]=url.split("/")[-1]
+        item["id"] = url.split("/")[-1]
         item["title"] = sel.xpath("//span[@class='link_title']//text()").extract()[0].strip()
         item["content"] = "".join(sel.xpath("//div[@id='article_content']/child::*").extract())
         item['url'] = url
@@ -102,16 +105,16 @@ class CsdnSpider(CrawlSpider):
         blog_rank = sel.xpath('//ul[@id="blog_rank"]/li/span/text()').re(NUM_RE)
         user_item["views"] = blog_rank[0]
         user_item["credits"] = blog_rank[1]
-        user_item["rank"] = blog_rank[2] if len(blog_rank)==3 else 0
+        user_item["rank"] = blog_rank[2] if len(blog_rank) == 3 else 0
         user_item["collection"] = "user"
         user_item["image_urls"] = [user_item["avatar"]]
         user_item["file_urls"] = user_item["image_urls"]
-        return [item,user_item]
+        return [item, user_item]
 
     def parse_blog_user(self, response):
         for url in response.xpath("//ul[@class='list_4']//a/@href").extract():
             redis.sadd(self.name + ":blog_user", url.strip())
-        for url in response.xpath("//div[@id='papelist']//a/@href").extract():  #用户列表获取列表
-            redis.sadd(self.name + ":blog_user", "http://blog.csdn.net"+url.strip())
-        for url in response.xpath("//div[@id='article_list']//h1//a/@href").extract(): #获取文章
-            yield Request("http://blog.csdn.net"+url, callback=self.parse_blog_detail)
+        for url in response.xpath("//div[@id='papelist']//a/@href").extract():  # 用户列表获取列表
+            redis.sadd(self.name + ":blog_user", "http://blog.csdn.net" + url.strip())
+        for url in response.xpath("//div[@id='article_list']//h1//a/@href").extract():  # 获取文章
+            yield Request("http://blog.csdn.net" + url, callback=self.parse_blog_detail)

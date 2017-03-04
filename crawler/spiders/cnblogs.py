@@ -4,7 +4,7 @@ from scrapy.selector import Selector
 from scrapy.utils.response import get_base_url
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor as sle
-from crawler.items.cnblogs import CnblogsItem
+from items.cnblogs import CnblogsItem
 
 
 class CnblogsSpider(CrawlSpider):

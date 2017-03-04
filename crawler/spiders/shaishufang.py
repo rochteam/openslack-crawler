@@ -6,7 +6,7 @@ from urlparse import urlparse
 import scrapy
 from bs4 import BeautifulSoup
 
-import unirest
+import requests
 # from crawler.items import UserItem, BookItem
 
 
@@ -92,8 +92,8 @@ class ShaishufangSpider(scrapy.Spider):
     # 动态获取HTTP Proxies， 并填充到Proxies中
     def dynamicProxies(self):
         url = 'http://svip.kuaidaili.com/api/getproxy/?orderid=983980639044193&num=100&browser=1&protocol=1&method=1&sp1=1&quality=0&sort=0&format=json&sep=1'
-        res = unirest.get(url, headers={"Accept": "application/json"})
-        for proxy in res.body['data']['proxy_list']:
+        res = requests.get(url, headers={"Accept": "application/json"})
+        for proxy in res.json()['data']['proxy_list']:
             self.Proxies.append('http://' + str(proxy))
 
     # 给meta的proxy赋值

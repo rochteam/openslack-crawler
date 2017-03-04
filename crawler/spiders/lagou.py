@@ -3,7 +3,7 @@ import time
 import sys
 import re
 from scrapy.http import Request
-from scrapy.contrib.linkextractors import LinkExtractor
+from scrapy.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from scrapy.spiders import CrawlSpider, Rule
 import logging as log
