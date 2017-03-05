@@ -23,7 +23,7 @@ class CsdnSpider(CrawlSpider):
     #     'http://blog.csdn.net/ranking.html',
     # )
 
-    def __init__(self, a, b, c):
+    def __init__(self, a=None, b=None, c=None):
         super(CsdnSpider, self).__init__()
         self.logger.info('spider init %s', self.name)
         print a, b, c

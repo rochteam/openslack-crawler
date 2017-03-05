@@ -10,6 +10,18 @@
 * 格式规整
 * URL地址的状态、爬虫的状态，保存在redis
 
+# run a spider
+
+```
+cd crawler && python run.py csdn
+```
+
+or
+
+```
+chmod +x entrypoint.sh && ./entrypoint.sh csdn
+```
+
 # mesos+marathon
 
 基于docker、mesos、marathon等构建云采集
@@ -57,11 +69,11 @@ docker run -d \
 mesosphere/marathon:v1.4.1 
 
 
-docker run -d--name redis -p 6379:6379 redis
+docker run -d --name redis -p 6379:6379 redis
 
 docker run -d --name mongo -p 27017:27017 mongo
 
-docker run -d -p 9300:9300 -p 9200:9200 elasticsearch
+docker run -d --name elasticsearch -p 9300:9300 -p 9200:9200 elasticsearch
 
 docker run -p 9092:9092 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e KAFKA_CREATE_TOPICS=“crawler” -e KAFKA_ZOOKEEPER_CONNECT=“127.0.0.1:2181” -v /var/run/docker.sock:/var/run/docker.sock wurstmeister/kafka
 
