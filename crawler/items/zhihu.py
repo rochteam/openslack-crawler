@@ -1,66 +1,9 @@
-#!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# Define here the models for your scraped items
-#
-# See documentation in:
-# http://doc.scrapy.org/en/latest/topics/items.html
 
-from scrapy.item import Item, Field
+from scrapy.item import Field
+from items import BaseItem
 
-
-class GithubUserItem(Item):
-    # 通用字段
-    _id = Field()
-    url = Field()
-    username = Field()
-    nickname = Field()
-    user_id = Field()
-    type = Field()
-
-    company = Field()
-    location = Field()
-    website = Field()
-    email = Field()
-    update_time = Field()
-
-    # 用户
-    join_date = Field()
-
-    followee_num = Field()
-    follower_num = Field()
-    star_num = Field()
-    organizations = Field()
-
-    # 单位
-    member_num = Field()
-
-
-class OutofmemoryUserItem(Item):
-    _id = Field()
-    weibo = Field()
-    twitter = Field()
-
-
-class GithubRepoItem(Item):
-    _id = Field()
-    url = Field()
-    username = Field()
-    name = Field()
-    description = Field()
-    update_date = Field()
-    star_num = Field()
-    watch_num = Field()
-    fork_num = Field()
-    language = Field()
-    type = Field()
-    commit_num = Field()
-    branch_num = Field()
-    tag_num = Field()
-    pull_num = Field()
-    issue_num = Field()
-
-
-class ZhihuUserItem(Item):
+class ZhihuUserItem(BaseItem):
     _id = Field()
     url = Field()
     img = Field()
@@ -93,7 +36,7 @@ class ZhihuUserItem(Item):
     update_time = Field()
 
 
-class ZhihuAskItem(Item):
+class ZhihuAskItem(BaseItem):
     _id = Field()
     username = Field()
     url = Field()
@@ -103,7 +46,7 @@ class ZhihuAskItem(Item):
     follower_num = Field()
 
 
-class ZhihuAnswerItem(Item):
+class ZhihuAnswerItem(BaseItem):
     _id = Field()
     username = Field()
     url = Field()
@@ -115,33 +58,13 @@ class ZhihuAnswerItem(Item):
     comment_num = Field()
 
 
-class ZhihuFolloweesItem(Item):
+class ZhihuFolloweesItem(BaseItem):
     _id = Field()
     username = Field()
     followees = Field()
 
 
-class ZhihuFollowersItem(Item):
+class ZhihuFollowersItem(BaseItem):
     _id = Field()
     username = Field()
     followers = Field()
-
-
-class DoubanbookItem(Item):
-    # define the fields for your item here like:
-    # name = Field()
-    title = Field()
-    link = Field()
-    desc = Field()
-    num = Field()
-
-
-class DoubanSubjectItem(Item):
-    title = Field()
-    link = Field()
-    info = Field()
-    rate = Field()
-    votes = Field()
-    content_intro = Field()
-    author_intro = Field()
-    tags = Field()

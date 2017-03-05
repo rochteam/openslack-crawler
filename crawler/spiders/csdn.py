@@ -26,7 +26,6 @@ class CsdnSpider(CrawlSpider):
     def __init__(self, a=None, b=None, c=None):
         super(CsdnSpider, self).__init__()
         self.logger.info('spider init %s', self.name)
-        print a, b, c
 
     def start_requests(self):
         yield Request("http://blog.csdn.net/index.html?&page=1", self.parse_blog_list)
@@ -62,27 +61,30 @@ class CsdnSpider(CrawlSpider):
     )
 
     def parse_blog_list(self, response):
+        print "+++++++++++++++++++++++++++parse_blog_list +++++++++++++++++++++++++++"
         page_nav = response.xpath("//div[@class='page_nav']/a/@href").extract()
         for l in page_nav:
             redis.sadd(self.name + ":blog_list", "http://blog.csdn.net" + l)
-        for sel in response.xpath("//div[@class='blog_list']"):
+        for sel in response.xpath("//dl[@class='blog_list clearfix']"):
             item = {}
-            link = sel.xpath('./h1/a[last()]/@href').extract()[0].strip()
-            categorys = sel.xpath('./h1/a[@class="category"]/text()').extract()
+            link = sel.xpath('.//h3/a/@href').extract()[0].strip()
+            categorys = sel.xpath('.//div[@class="blog_list_b_l fl"]//a/text()').extract()
             if categorys:
-                item["categorys"] = categorys[0].strip().replace("[",
-                                                                 "").replace(
-                    "]", "")
-            item["digg"] = int(sel.xpath('.//span[@class="fr digg"]/@digg').extract()[0].strip())
-            item["bury"] = int(sel.xpath('.//span[@class="fr digg"]/@bury').extract()[0].strip())
+                item["category"] = categorys[0].strip()
+
+            # item["digg"] = int(sel.xpath('.//span[@class="fr digg"]/@digg').extract()[0].strip())
+            # item["bury"] = int(sel.xpath('.//span[@class="fr digg"]/@bury').extract()[0].strip())
             yield Request(link, meta={"base_item": item}, callback=self.parse_blog_detail)
 
     def parse_blog_detail(self, response):
+        print "+++++++++++++++++++++++++++parse_blog_detail+++++++++++++++++++++++++++"
         sel = Selector(response)
         item = response.meta["base_item"] if "base_item" in response.meta else {}
         url = response.url
         user_item = {}
-        item["id"] = url.split("/")[-1]
+        item["spider"] = self.name
+        item["created"] = int(time.time())
+        item["id"] = "csdn-"+url.split("/")[-1]
         item["title"] = sel.xpath("//span[@class='link_title']//text()").extract()[0].strip()
         item["content"] = "".join(sel.xpath("//div[@id='article_content']/child::*").extract())
         item['url'] = url
@@ -92,26 +94,24 @@ class CsdnSpider(CrawlSpider):
         item["comments_count"] = sel.xpath("//span[@class='link_comments']/text()").re(NUM_RE)[0].strip()
         item["image_urls"] = sel.xpath('//div[@id="article_content"]//img/@src').extract()
         item["file_urls"] = item["image_urls"]
-        item["collection"] = "blog"
-        item["category"] = "doc"
 
-        user_item["fullname"] = sel.xpath("//div[@id='blog_userface']//a[@class='user_name']/text()").extract()[
-            0].strip()
+        user_item["fullname"] = sel.xpath("//div[@id='blog_userface']//a[@class='user_name']/text()").extract()[0].strip()
         user_item["url"] = sel.xpath("//div[@id='blog_userface']//a[@class='user_name']/@href").extract()[0].strip()
         user_item["name"] = user_item["url"].replace("http://my.csdn.net/", "")
         item["username"] = user_item["name"]
+        user_item["id"]="csdb-"+user_item["name"]
         redis.sadd(self.name + ":blog_user", "http://blog.csdn.net/" + user_item["name"])
         user_item["avatar"] = sel.xpath(".//div[@id='blog_userface']//img/@src").extract()[0].strip()
         blog_rank = sel.xpath('//ul[@id="blog_rank"]/li/span/text()').re(NUM_RE)
         user_item["views"] = blog_rank[0]
         user_item["credits"] = blog_rank[1]
         user_item["rank"] = blog_rank[2] if len(blog_rank) == 3 else 0
-        user_item["collection"] = "user"
         user_item["image_urls"] = [user_item["avatar"]]
         user_item["file_urls"] = user_item["image_urls"]
         return [item, user_item]
 
     def parse_blog_user(self, response):
+        print "+++++++++++++++++++++++++++parse_blog_user+++++++++++++++++++++++++++"
         for url in response.xpath("//ul[@class='list_4']//a/@href").extract():
             redis.sadd(self.name + ":blog_user", url.strip())
         for url in response.xpath("//div[@id='papelist']//a/@href").extract():  # 用户列表获取列表

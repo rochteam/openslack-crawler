@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*-coding:utf-8-*-
 
 import datetime
@@ -212,8 +211,6 @@ class MongoDBPipeline(object):
         :param spider: The spider running the queries
         :returns: Item object
         """
-        database = self.connection[item["db"]]
-        self.collection = database[item["collection"]]
         if not isinstance(item, list):
             item = dict(item)
 

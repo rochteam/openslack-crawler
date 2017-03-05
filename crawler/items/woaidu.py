@@ -1,10 +1,9 @@
-#!/usr/bin/python
 # -*-coding:utf-8-*-
+from items import BaseItem
+from scrapy.item import Field
 
-from scrapy.item import Item, Field
 
-
-class WoaiduCrawlerItem(Item):
+class WoaiduCrawlerItem(BaseItem):
     mongodb_id = Field()
     book_name = Field()
     alias_name = Field()

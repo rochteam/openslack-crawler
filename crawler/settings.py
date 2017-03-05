@@ -121,9 +121,8 @@ STATS_DUMP = True
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'crawler.pipelines.standard.StandardFieldPipeline': 100,
-    'crawler.pipelines.file.MongodbFilesPipeline': 200,
-    'crawler.pipelines.mongodb.MongoDBPipeline': 300,
+    # 'crawler.pipelines.file.MongodbFilesPipeline': 200,
+    'crawler.pipelines.es.ElasticSearchPipeline': 300,
     # 'crawler.pipelines.mongo.MongoPipeline': 900,
 }
 
@@ -331,8 +330,8 @@ ELASTICSEARCH_SERVER = '127.0.0.1'  # If not 'localhost' prepend 'http://'
 ELASTICSEARCH_PORT = 9200  # If port 80 leave blank
 ELASTICSEARCH_USERNAME = ''
 ELASTICSEARCH_PASSWORD = ''
-ELASTICSEARCH_INDEX = 'scrapy'
-ELASTICSEARCH_TYPE = 'items'
+ELASTICSEARCH_INDEX = 'article'
+ELASTICSEARCH_TYPE = 'article'
 ELASTICSEARCH_UNIQ_KEY = 'url'
 
 # A boolean which specifies if the web service will be enabled (provided its extension is also enabled).
