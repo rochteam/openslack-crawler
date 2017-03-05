@@ -6,6 +6,6 @@ RUN apt-get install python-pip python-dev libxml2-dev libxslt1-dev zlib1g-dev li
 RUN pip -r requirements.txt
 RUN mkdir -p /opt/openslack && cd /opt/openslack && git clone https://github.com/openslack/openslack-crawler.git
 COPY entrypoint.sh /
-RUN chmod +x entrypoint.sh
+RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["-s"]
