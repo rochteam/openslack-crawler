@@ -1,5 +1,5 @@
-# 大数据搜索
-基于scrapy的采集系统，采用reids、kafka、rabbitmq、elasticsearch、mysql、django等技术,打造新生代的分布式数据搜索和数据基础平台
+# 基于scrapy的云采集
+采用reids、kafka、rabbitmq、elasticsearch、mysql、django等技术,打造新生代的分布式数据搜索和数据基础平台
 
 <img src="./docs/static/images/marathon.png">
 <img src="./docs/static/images/mesos.png">
