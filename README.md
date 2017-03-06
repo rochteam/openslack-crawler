@@ -124,7 +124,9 @@ docker build openslack/crawler:0.1 .
 # NOTICE
 
 1、如果拥有超大量的数据采集，建议数据不要直接保存到ES，先保存到kafka，再用logstash、fluentd或者自己编写消费者把数据导入到ES，请参考logstash.conf
+
 2、同样监控的metric过多的话，建议采用influxdb存储，用grafana作为看板即可
+
 3、以上都是单机模式，不建议用在生产环境，建议自行探索如何建立集群模式
 
 # THANKS
